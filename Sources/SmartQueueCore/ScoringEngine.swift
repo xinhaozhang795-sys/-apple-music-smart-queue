@@ -18,10 +18,12 @@ public struct ScoringEngine: Sendable {
         let artistRepeat = recentArtistNames.contains(candidate.artistName) ? 1.0 : 0.0
 
         let raw =
-            recommendation * policy.personalRecommendationWeight +
-            candidate.affinity * policy.affinityWeight +
+            candidate.affinity * policy.personalPreferenceWeight +
+            recommendation * policy.appleRecommendationWeight +
             candidate.continuity * policy.continuityWeight +
-            candidate.freshness * policy.freshnessWeight -
+            candidate.explorationValue * policy.explorationWeight +
+            candidate.freshness * policy.freshnessWeight +
+            candidate.diversity * policy.diversityWeight -
             duplicate * policy.duplicatePenalty -
             artistRepeat * policy.artistRepeatPenalty
 
