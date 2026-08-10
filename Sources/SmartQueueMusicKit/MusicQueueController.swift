@@ -7,7 +7,7 @@ public enum MusicQueueControllerError: Error {
 }
 
 @MainActor
-public final class MusicQueueController {
+public final class MusicQueueController: MusicPlaybackAdapter {
     private let player = SystemMusicPlayer.shared
 
     public init() {}
@@ -39,6 +39,14 @@ public final class MusicQueueController {
 
     public func pause() {
         player.pause()
+    }
+
+    public var currentTrackID: String? {
+        player.queue.currentEntry?.id.rawValue
+    }
+
+    public var isPlaying: Bool {
+        player.state.playbackStatus == .playing
     }
 
     public var currentEntry: MusicPlayer.Queue.Entry? {
