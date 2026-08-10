@@ -14,9 +14,8 @@ public final class SmartQueueCoordinator {
         self.planner = QueuePlanner(policy: policy)
     }
 
-    /// Builds the next batch without changing playback.
-    /// This separation makes the recommendation engine testable before we
-    /// connect automatic queue mutation to the live player.
+    /// Builds the next batch from live Apple Music recommendations and recent plays.
+    /// This method only plans; it does not mutate the live player queue.
     public func makeNextBatch(
         current: CurrentTrackContext,
         activeQueueTrackIDs: Set<String> = [],
@@ -27,21 +26,30 @@ public final class SmartQueueCoordinator {
 
         let recommendedCandidates = try await recommendations
         let recentCandidates = try await recent
-        let candidates = recommendedCandidates + recentCandidates
+        let derivedRecentArtists = Set(recentCandidates.map(\.artistName))
+        let artists = recentArtistNames.union(derivedRecentArtists)
+
+        // Recommendations and history can contain the same track. Keep one copy
+        // before scoring so a duplicate source cannot distort ranking.
+        let candidates = mergeUnique(recommendedCandidates + recentCandidates)
 
         return planner.plan(
             candidates: candidates,
             current: current,
             activeQueueTrackIDs: activeQueueTrackIDs,
-            recentArtistNames: recentArtistNames
+            recentArtistNames: artists
         )
     }
 
-    /// Explicitly replaces the system Music queue with the supplied IDs.
-    /// V0.1 keeps this operation explicit because SystemMusicPlayer exposes
-    /// less queue introspection than ApplicationMusicPlayer.
+    /// Replaces the system Music queue with a planned batch.
+    /// Playback remains explicit so planning can be tested independently.
     public func loadBatch(_ candidates: [ScoredCandidate], play: Bool = false) async throws {
         let ids = candidates.map(\.candidate.id)
         try await queueController.setQueue(trackIDs: ids, play: play)
+    }
+
+    private func mergeUnique(_ candidates: [TrackCandidate]) -> [TrackCandidate] {
+        var seen = Set<String>()
+        return candidates.filter { seen.insert($0.id).inserted }
     }
 }
