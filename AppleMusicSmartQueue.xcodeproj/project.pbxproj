@@ -74,6 +74,7 @@
 			);
 			name = AppleMusicSmartQueue;
 			packageProductDependencies = (
+				A00000810000000100000001 /* SmartQueueMusicKit */,
 			);
 			productName = AppleMusicSmartQueue;
 			productReference = A00000110000000100000005 /* AppleMusicSmartQueue.app */;
@@ -104,6 +105,9 @@
 				Base,
 			);
 			mainGroup = A00000310000000100000001;
+			packageReferences = (
+				A00000910000000100000001 /* XCLocalSwiftPackageReference "Package" */,
+			);
 			productRefGroup = A00000310000000100000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -160,7 +164,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = AppleMusicSmartQueue/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -179,7 +182,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = AppleMusicSmartQueue/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -214,6 +216,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A00000910000000100000001 /* XCLocalSwiftPackageReference "Package" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A00000810000000100000001 /* SmartQueueMusicKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000910000000100000001 /* XCLocalSwiftPackageReference "Package" */;
+			productName = SmartQueueMusicKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A00000610000000100000001 /* Project object */;
 }
