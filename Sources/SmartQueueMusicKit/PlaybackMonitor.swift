@@ -6,6 +6,7 @@ public final class PlaybackMonitor {
     private let player = SystemMusicPlayer.shared
     private var task: Task<Void, Never>?
     private var lastTrackID: MusicItemID?
+    private var lastPlaybackStatus: MusicPlayer.PlaybackStatus?
 
     public private(set) var currentTrackID: MusicItemID?
     public private(set) var playbackStatus: MusicPlayer.PlaybackStatus = .stopped
@@ -21,12 +22,14 @@ public final class PlaybackMonitor {
             while !Task.isCancelled {
                 let trackID = self.player.queue.currentEntry?.id
                 let status = self.player.state.playbackStatus
+                let changed = trackID != self.lastTrackID || status != self.lastPlaybackStatus
 
                 self.currentTrackID = trackID
                 self.playbackStatus = status
 
-                if trackID != self.lastTrackID || status != self.playbackStatus {
+                if changed {
                     self.lastTrackID = trackID
+                    self.lastPlaybackStatus = status
                     onChange(trackID, status)
                 }
 
