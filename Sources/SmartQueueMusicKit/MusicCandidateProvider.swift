@@ -5,38 +5,90 @@ import SmartQueueCore
 public struct MusicCandidateProvider {
     public init() {}
 
-    public func personalRecommendations(limit: Int = 25) async throws -> [QueueCandidate] {
+    /// Fetches Apple Music's personalized recommendation containers and expands
+    /// recommended albums/playlists into playable tracks.
+    public func personalRecommendations(limit: Int = 25) async throws -> [TrackCandidate] {
         var request = MusicPersonalRecommendationsRequest()
         request.limit = limit
         let response = try await request.response()
 
-        return response.recommendations.flatMap { recommendation in
-            recommendation.items.compactMap(Self.makeCandidate)
+        var candidates: [TrackCandidate] = []
+        candidates.reserveCapacity(limit * 5)
+
+        for recommendation in response.recommendations {
+            for item in recommendation.items {
+                switch item {
+                case .album(let album):
+                    candidates.append(contentsOf: try await tracks(in: album))
+                case .playlist(let playlist):
+                    candidates.append(contentsOf: try await tracks(in: playlist))
+                case .station:
+                    continue
+                }
+            }
         }
+
+        return candidates
     }
 
-    public func recentlyPlayed(limit: Int = 25) async throws -> [QueueCandidate] {
-        var request = MusicRecentlyPlayedRequest()
+    /// Fetches recently played songs directly, avoiding playlist/station containers.
+    public func recentlyPlayed(limit: Int = 25) async throws -> [TrackCandidate] {
+        var request = MusicRecentlyPlayedRequest<Song>()
         request.limit = limit
         let response = try await request.response()
 
-        return response.items.compactMap(Self.makeCandidate)
+        return response.items.map { song in
+            makeCandidate(song, source: .recentlyPlayed)
+        }
     }
 
-    private static func makeCandidate(_ item: MusicCatalogSearchable) -> QueueCandidate? {
-        guard let song = item as? Song else { return nil }
+    private func tracks(in album: Album) async throws -> [TrackCandidate] {
+        var request = MusicCatalogResourceRequest<Album>(
+            matching: \.id,
+            equalTo: album.id
+        )
+        request.properties = [.tracks]
+        request.limit = 1
 
-        return QueueCandidate(
+        let response = try await request.response()
+        return response.items
+            .flatMap { $0.tracks ?? [] }
+            .compactMap { track in
+                guard case .song(let song) = track else { return nil }
+                return makeCandidate(song, source: .personalRecommendation)
+            }
+    }
+
+    private func tracks(in playlist: Playlist) async throws -> [TrackCandidate] {
+        var request = MusicCatalogResourceRequest<Playlist>(
+            matching: \.id,
+            equalTo: playlist.id
+        )
+        request.properties = [.tracks]
+        request.limit = 1
+
+        let response = try await request.response()
+        return response.items
+            .flatMap { $0.tracks ?? [] }
+            .compactMap { track in
+                guard case .song(let song) = track else { return nil }
+                return makeCandidate(song, source: .personalRecommendation)
+            }
+    }
+
+    private func makeCandidate(_ song: Song, source: CandidateSource) -> TrackCandidate {
+        TrackCandidate(
             id: song.id.rawValue,
             title: song.title,
             artistName: song.artistName,
-            albumName: song.albumTitle,
-            genres: song.genreNames,
-            source: .appleMusicRecommendation,
-            metadata: CandidateMetadata(
-                duration: song.duration,
-                releaseDate: song.releaseDate
-            )
+            source: source,
+            freshness: freshness(for: song.lastPlayedDate)
         )
+    }
+
+    private func freshness(for lastPlayedDate: Date?) -> Double {
+        guard let lastPlayedDate else { return 1.0 }
+        let days = max(0, Date().timeIntervalSince(lastPlayedDate) / 86_400)
+        return min(1.0, days / 30.0)
     }
 }
