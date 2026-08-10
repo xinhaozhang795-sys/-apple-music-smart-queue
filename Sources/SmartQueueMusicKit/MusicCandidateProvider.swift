@@ -2,7 +2,7 @@ import Foundation
 import MusicKit
 import SmartQueueCore
 
-public struct MusicCandidateProvider {
+public struct MusicCandidateProvider: MusicCandidateSource, Sendable {
     public init() {}
 
     /// Fetches Apple Music's personalized recommendation containers and expands
@@ -29,6 +29,10 @@ public struct MusicCandidateProvider {
         }
 
         return candidates
+    }
+
+    public func personalRecommendations() async throws -> [TrackCandidate] {
+        try await personalRecommendations(limit: 25)
     }
 
     /// Fetches recently played songs directly, avoiding playlist/station containers.
