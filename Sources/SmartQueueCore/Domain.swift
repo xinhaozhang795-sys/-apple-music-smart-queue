@@ -8,6 +8,8 @@ public struct TrackCandidate: Identifiable, Hashable, Sendable {
     public let affinity: Double
     public let continuity: Double
     public let freshness: Double
+    public let explorationValue: Double
+    public let diversity: Double
 
     public init(
         id: String,
@@ -16,7 +18,9 @@ public struct TrackCandidate: Identifiable, Hashable, Sendable {
         source: CandidateSource,
         affinity: Double = 0,
         continuity: Double = 0,
-        freshness: Double = 0
+        freshness: Double = 0,
+        explorationValue: Double = 0,
+        diversity: Double = 0
     ) {
         self.id = id
         self.title = title
@@ -25,6 +29,8 @@ public struct TrackCandidate: Identifiable, Hashable, Sendable {
         self.affinity = affinity
         self.continuity = continuity
         self.freshness = freshness
+        self.explorationValue = explorationValue
+        self.diversity = diversity
     }
 }
 
@@ -53,31 +59,44 @@ public struct QueuePolicy: Sendable {
     public var targetSize: Int
     public var refillThreshold: Int
     public var refillBatchSize: Int
-    public var personalRecommendationWeight: Double
-    public var affinityWeight: Double
+
+    // Smart Flow weights. These sum to 1.0 before repeat penalties.
+    public var personalPreferenceWeight: Double
+    public var appleRecommendationWeight: Double
     public var continuityWeight: Double
+    public var explorationWeight: Double
     public var freshnessWeight: Double
+    public var diversityWeight: Double
+
     public var duplicatePenalty: Double
     public var artistRepeatPenalty: Double
+
+    // Kept as aliases for compatibility with the first V0.1 scoring API.
+    public var personalRecommendationWeight: Double { appleRecommendationWeight }
+    public var affinityWeight: Double { personalPreferenceWeight }
 
     public init(
         targetSize: Int = 8,
         refillThreshold: Int = 3,
         refillBatchSize: Int = 5,
-        personalRecommendationWeight: Double = 0.35,
-        affinityWeight: Double = 0.25,
+        personalPreferenceWeight: Double = 0.30,
+        appleRecommendationWeight: Double = 0.20,
         continuityWeight: Double = 0.20,
+        explorationWeight: Double = 0.15,
         freshnessWeight: Double = 0.10,
+        diversityWeight: Double = 0.05,
         duplicatePenalty: Double = 0.10,
         artistRepeatPenalty: Double = 0.10
     ) {
         self.targetSize = targetSize
         self.refillThreshold = refillThreshold
         self.refillBatchSize = refillBatchSize
-        self.personalRecommendationWeight = personalRecommendationWeight
-        self.affinityWeight = affinityWeight
+        self.personalPreferenceWeight = personalPreferenceWeight
+        self.appleRecommendationWeight = appleRecommendationWeight
         self.continuityWeight = continuityWeight
+        self.explorationWeight = explorationWeight
         self.freshnessWeight = freshnessWeight
+        self.diversityWeight = diversityWeight
         self.duplicatePenalty = duplicatePenalty
         self.artistRepeatPenalty = artistRepeatPenalty
     }
