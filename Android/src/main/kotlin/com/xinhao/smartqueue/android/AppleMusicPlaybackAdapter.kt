@@ -1,6 +1,7 @@
 package com.xinhao.smartqueue.android
 
 import com.apple.android.music.playback.controller.MediaPlayerController
+import com.apple.android.music.playback.queue.PlaybackQueueInsertionType
 import com.apple.android.music.playback.queue.PlaybackQueueItemProvider
 
 /**
@@ -17,20 +18,14 @@ class AppleMusicPlaybackAdapter(
     fun canAppend(): Boolean = controller.canAppendToPlaybackQueue()
 
     fun append(provider: PlaybackQueueItemProvider) {
-        check(canAppend()) { "Apple Music playback queue cannot be appended right now." }
+        check(canAppend()) { "Apple Music playback queue cannot be appended to right now." }
         controller.addQueueItems(
             provider,
-            /* MusicKit insertion constant is supplied by the host integration. */
-            APPEND_INSERTION_TYPE
+            PlaybackQueueInsertionType.INSERTION_TYPE_AT_END
         )
     }
 
     fun play() = controller.play()
 
     fun pause() = controller.pause()
-
-    companion object {
-        /** Kept behind the adapter so Core never depends on MusicKit constants. */
-        const val APPEND_INSERTION_TYPE: Int = 1
-    }
 }
