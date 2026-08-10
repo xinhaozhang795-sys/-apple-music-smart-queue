@@ -36,15 +36,21 @@ public struct ScoringEngine: Sendable {
         activeQueueTrackIDs: Set<String>,
         recentArtistNames: Set<String>
     ) -> [ScoredCandidate] {
-        candidates
-            .map {
+        var scored: [ScoredCandidate] = []
+        scored.reserveCapacity(candidates.count)
+
+        for candidate in candidates {
+            scored.append(
                 score(
-                    $0,
+                    candidate,
                     current: current,
                     activeQueueTrackIDs: activeQueueTrackIDs,
                     recentArtistNames: recentArtistNames
                 )
-            }
-            .sorted { $0.score > $1.score }
+            )
+        }
+
+        scored.sort { $0.score > $1.score }
+        return scored
     }
 }
