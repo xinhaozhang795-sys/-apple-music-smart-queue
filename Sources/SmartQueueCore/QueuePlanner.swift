@@ -23,9 +23,17 @@ public struct QueuePlanner: Sendable {
         )
 
         var selected: [ScoredCandidate] = []
-        var selectedIDs = activeQueueTrackIDs
-        var selectedArtists = recentArtistNames
+        selected.reserveCapacity(policy.refillBatchSize)
 
+        var selectedIDs = activeQueueTrackIDs
+        selectedIDs.reserveCapacity(activeQueueTrackIDs.count + policy.refillBatchSize)
+
+        var selectedArtists = recentArtistNames
+        selectedArtists.reserveCapacity(recentArtistNames.count + policy.refillBatchSize)
+
+        // First pass prioritizes artist diversity while always avoiding exact
+        // track duplicates. The second pass relaxes only the artist constraint
+        // when diversity is too restrictive to fill the requested batch.
         for candidate in ranked {
             guard selected.count < policy.refillBatchSize else { break }
             guard !selectedIDs.contains(candidate.id) else { continue }
@@ -36,8 +44,6 @@ public struct QueuePlanner: Sendable {
             selectedArtists.insert(candidate.candidate.artistName)
         }
 
-        // If artist diversity filtered too aggressively, fill remaining slots
-        // while still preventing exact track duplicates.
         if selected.count < policy.refillBatchSize {
             for candidate in ranked {
                 guard selected.count < policy.refillBatchSize else { break }
