@@ -25,7 +25,9 @@ public final class SmartQueueCoordinator {
         async let recommendations = candidateProvider.personalRecommendations()
         async let recent = candidateProvider.recentlyPlayed()
 
-        let candidates = try await recommendations + recent
+        let recommendedCandidates = try await recommendations
+        let recentCandidates = try await recent
+        let candidates = recommendedCandidates + recentCandidates
 
         return planner.plan(
             candidates: candidates,
