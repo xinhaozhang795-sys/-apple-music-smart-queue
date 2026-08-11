@@ -22,7 +22,7 @@ public final class PlaybackMonitor {
             while !Task.isCancelled {
                 let trackID = self.player.queue.currentEntry?.id
                 let status = self.player.state.playbackStatus
-                let changed = trackID != self.lastTrackID || status != self.lastPlaybackStatus
+                let changed = trackID.map(\.rawValue) != self.lastTrackID?.rawValue || status != self.lastPlaybackStatus
 
                 self.currentTrackID = trackID
                 self.playbackStatus = status
