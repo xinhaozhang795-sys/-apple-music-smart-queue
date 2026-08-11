@@ -17,8 +17,14 @@ public protocol MusicCandidateSource: Sendable {
 public protocol MusicPlaybackAdapter: AnyObject {
     var currentTrackID: String? { get }
     var isPlaying: Bool { get }
+    var queueCount: Int { get }
 
+    /// Replaces the playback queue. Use only for an explicit queue reset.
     func setQueue(trackIDs: [String], play: Bool) async throws
+
+    /// Appends tracks without replacing the existing playback queue.
+    func appendToQueue(trackIDs: [String]) async throws
+
     func play() async throws
     func pause()
 }
