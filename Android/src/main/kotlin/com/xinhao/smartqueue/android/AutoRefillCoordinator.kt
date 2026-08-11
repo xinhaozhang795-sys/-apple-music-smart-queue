@@ -1,15 +1,14 @@
 package com.xinhao.smartqueue.android
 
-import com.apple.android.music.playback.queue.PlaybackQueueItemProvider
-
 /**
  * Platform coordinator for Android automatic queue refill.
  *
- * The coordinator deliberately does not start playback. It only appends a
- * prepared batch when the remaining queue falls below the configured threshold.
+ * Smart Queue supplies track IDs. The resolver owns MusicKit catalog lookup and
+ * queue-item construction; this coordinator only decides when and how to append.
  */
 class AutoRefillCoordinator(
     private val playback: AppleMusicPlaybackAdapter,
+    private val resolver: TrackCandidateResolver,
     private val refillThreshold: Int = 3
 ) {
     private var refilling = false
@@ -17,12 +16,14 @@ class AutoRefillCoordinator(
     fun shouldRefill(): Boolean =
         !refilling && playback.currentQueueCount() <= refillThreshold && playback.canAppend()
 
-    fun refill(provider: PlaybackQueueItemProvider): Boolean {
-        if (!shouldRefill()) return false
+    suspend fun refill(trackIDs: List<String>): Boolean {
+        if (!shouldRefill() || trackIDs.isEmpty()) return false
 
         refilling = true
         return try {
-            playback.append(provider)
+            val resolved = resolver.resolve(trackIDs)
+            if (resolved.itemCount == 0) return false
+            playback.append(resolved.asPlaybackQueueItemProvider())
             true
         } finally {
             refilling = false
