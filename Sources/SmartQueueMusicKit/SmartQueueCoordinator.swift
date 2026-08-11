@@ -41,10 +41,19 @@ public final class SmartQueueCoordinator {
         )
     }
 
-    /// Replaces the system Music queue with a planned batch.
+    /// Appends a planned batch to the existing system Music queue.
     /// Playback remains explicit so planning can be tested independently.
-    public func loadBatch(_ candidates: [ScoredCandidate], play: Bool = false) async throws {
+    public func appendBatch(_ candidates: [ScoredCandidate]) async throws {
         let ids = candidates.map(\.candidate.id)
+        guard !ids.isEmpty else { return }
+        try await queueController.appendToQueue(trackIDs: ids)
+    }
+
+    /// Explicitly replaces the system Music queue with a planned batch.
+    /// This is intentionally separate from AutoRefill.
+    public func replaceQueue(with candidates: [ScoredCandidate], play: Bool = false) async throws {
+        let ids = candidates.map(\.candidate.id)
+        guard !ids.isEmpty else { return }
         try await queueController.setQueue(trackIDs: ids, play: play)
     }
 
