@@ -11,7 +11,7 @@ public final class PlaybackContextProvider {
     /// Returns the track currently known to the system player.
     /// The app intentionally treats the system player as the playback authority.
     public var currentTrackID: String? {
-        player.queue.currentEntry?.id.rawValue
+        player.queue.currentEntry?.id
     }
 
     public var isPlaying: Bool {
