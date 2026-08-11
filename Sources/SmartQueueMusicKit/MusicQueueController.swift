@@ -9,6 +9,7 @@ public enum MusicQueueControllerError: Error {
 @MainActor
 public final class MusicQueueController: MusicPlaybackAdapter {
     private let player = SystemMusicPlayer.shared
+    private var managedQueueCount = 0
 
     public init() {}
 
@@ -19,6 +20,7 @@ public final class MusicQueueController: MusicPlaybackAdapter {
     public func setQueue(trackIDs: [String], play: Bool = false) async throws {
         let songs = try await resolveSongs(trackIDs)
         player.queue = MusicPlayer.Queue(for: songs)
+        managedQueueCount = songs.count
         if play {
             try await player.play()
         }
@@ -28,9 +30,9 @@ public final class MusicQueueController: MusicPlaybackAdapter {
     /// The currently playing item and existing Up Next entries are preserved.
     public func appendToQueue(trackIDs: [String]) async throws {
         let songs = try await resolveSongs(trackIDs)
-        for song in songs {
-            player.queue.insert(song, position: .tail)
-        }
+        guard !songs.isEmpty else { throw MusicQueueControllerError.noPlayableTracks }
+        try await player.queue.insert(songs, position: .tail)
+        managedQueueCount += songs.count
     }
 
     public func play() async throws {
@@ -42,15 +44,19 @@ public final class MusicQueueController: MusicPlaybackAdapter {
     }
 
     public var currentTrackID: String? {
-        player.queue.currentEntry?.id.rawValue
+        player.queue.currentEntry?.id
     }
 
     public var isPlaying: Bool {
         player.state.playbackStatus == .playing
     }
 
+    /// The count tracked by this controller for queues it creates or appends.
+    /// `SystemMusicPlayer.Queue` intentionally does not expose an `entries`
+    /// collection, so an externally modified Music app queue cannot be counted
+    /// reliably through MusicKit.
     public var queueCount: Int {
-        player.queue.entries.count
+        managedQueueCount
     }
 
     public var currentEntry: MusicPlayer.Queue.Entry? {
@@ -66,7 +72,7 @@ public final class MusicQueueController: MusicPlaybackAdapter {
         guard !ids.isEmpty else { throw MusicQueueControllerError.noPlayableTracks }
 
         var request = MusicCatalogResourceRequest<Song>(matching: \.id, memberOf: ids)
-        request.options = [.findEquivalents]
+        request.limit = ids.count
         let response = try await request.response()
 
         let songs = ids.compactMap { id in
