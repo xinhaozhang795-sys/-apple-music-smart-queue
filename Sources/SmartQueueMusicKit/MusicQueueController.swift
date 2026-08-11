@@ -1,5 +1,5 @@
 import Foundation
-import MusicKit
+@preconcurrency import MusicKit
 import SmartQueueCore
 
 public enum MusicQueueControllerError: Error {
