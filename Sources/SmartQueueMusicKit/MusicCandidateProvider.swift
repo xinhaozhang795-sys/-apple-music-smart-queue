@@ -24,6 +24,8 @@ public struct MusicCandidateProvider: MusicCandidateSource, Sendable {
                     candidates.append(contentsOf: try await tracks(in: playlist))
                 case .station:
                     continue
+                @unknown default:
+                    continue
                 }
             }
         }
