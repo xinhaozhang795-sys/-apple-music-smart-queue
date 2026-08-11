@@ -20,7 +20,13 @@ public final class PlaybackMonitor {
         task = Task { @MainActor [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                let trackID = self.player.queue.currentEntry?.id.map { MusicItemID(rawValue: $0) }
+                let trackID: MusicItemID?
+                if let rawTrackID = self.player.queue.currentEntry?.id {
+                    trackID = MusicItemID(rawValue: rawTrackID)
+                } else {
+                    trackID = nil
+                }
+
                 let status = self.player.state.playbackStatus
                 let changed = trackID != self.lastTrackID || status != self.lastPlaybackStatus
 
