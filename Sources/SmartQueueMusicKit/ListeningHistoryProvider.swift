@@ -6,7 +6,7 @@ public struct ListeningHistoryProvider: Sendable {
     public init() {}
 
     public func recentlyPlayedSongs() async throws -> [TrackCandidate] {
-        var request = MusicRecentlyPlayedContainerRequest<Song>()
+        var request = MusicRecentlyPlayedContainerRequest()
         request.limit = 50
         let response = try await request.response()
 
