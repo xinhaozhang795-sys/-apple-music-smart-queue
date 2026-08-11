@@ -1,5 +1,7 @@
 package com.xinhao.smartqueue.android
 
+import com.apple.android.music.playback.queue.PlaybackQueueItemProvider
+
 /**
  * Resolves Smart Queue track IDs into Android MusicKit playback items.
  *
@@ -13,4 +15,5 @@ interface TrackCandidateResolver {
 /** Result of resolving candidate IDs for playback. */
 interface ResolvedQueueItems {
     val itemCount: Int
+    fun asPlaybackQueueItemProvider(): PlaybackQueueItemProvider
 }
