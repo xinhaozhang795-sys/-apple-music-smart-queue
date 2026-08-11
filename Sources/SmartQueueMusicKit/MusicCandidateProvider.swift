@@ -35,15 +35,10 @@ public struct MusicCandidateProvider: MusicCandidateSource, Sendable {
         try await personalRecommendations(limit: 25)
     }
 
-    /// Fetches recently played songs directly, avoiding playlist/station containers.
-    public func recentlyPlayed(limit: Int = 25) async throws -> [TrackCandidate] {
-        var request = MusicRecentlyPlayedRequest<Song>()
-        request.limit = limit
-        let response = try await request.response()
-
-        return response.items.map { song in
-            makeCandidate(song, source: .recentlyPlayed)
-        }
+    /// Delegates recently-played retrieval to the shared listening-history
+    /// provider so there is a single source of truth for this MusicKit query.
+    public func recentlyPlayed() async throws -> [TrackCandidate] {
+        try await ListeningHistoryProvider().recentlyPlayedSongs()
     }
 
     private func tracks(in album: Album) async throws -> [TrackCandidate] {
