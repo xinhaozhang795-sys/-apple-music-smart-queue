@@ -25,7 +25,11 @@ jobs:
           xcodebuild -list -json -workspace .
 
       - name: Resolve Swift package dependencies
-        run: xcodebuild -resolvePackageDependencies -workspace .
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -workspace . \
+            -scheme AppleMusicSmartQueue-Package
 
       - name: Build iOS package
         run: |
