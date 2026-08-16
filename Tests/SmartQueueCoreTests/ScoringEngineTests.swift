@@ -70,6 +70,76 @@ final class ScoringEngineTests: XCTestCase {
         XCTAssertEqual(ranked.first?.id, "fresh")
     }
 
+    func testPenalizesRecentArtistIgnoringCaseAndWhitespace() {
+        let engine = ScoringEngine()
+        let current = CurrentTrackContext(trackID: "current", title: "Current", artistName: "Artist A")
+
+        let repeated = TrackCandidate(
+            id: "repeated",
+            title: "Repeated",
+            artistName: " artist b ",
+            source: .library,
+            affinity: 0.8,
+            continuity: 0.8,
+            freshness: 0.8
+        )
+
+        let freshArtist = TrackCandidate(
+            id: "fresh",
+            title: "Fresh",
+            artistName: "Artist C",
+            source: .library,
+            affinity: 0.8,
+            continuity: 0.8,
+            freshness: 0.8
+        )
+
+        let ranked = engine.rank(
+            [repeated, freshArtist],
+            current: current,
+            activeQueueTrackIDs: [],
+            recentArtistNames: ["ARTIST B"]
+        )
+
+        XCTAssertEqual(ranked.first?.id, "fresh")
+    }
+
+    func testRankingUsesDeterministicTieBreakers() {
+        let engine = ScoringEngine()
+        let current = CurrentTrackContext(trackID: "current", title: "Current", artistName: "Artist A")
+
+        let zeta = TrackCandidate(
+            id: "track-z",
+            title: "Zeta",
+            artistName: "Artist Z",
+            source: .library,
+            affinity: 0.5
+        )
+        let alphaB = TrackCandidate(
+            id: "track-b",
+            title: "Alpha",
+            artistName: "Artist B",
+            source: .library,
+            affinity: 0.5
+        )
+        let alphaA = TrackCandidate(
+            id: "track-a",
+            title: "Alpha",
+            artistName: "Artist A",
+            source: .library,
+            affinity: 0.5
+        )
+
+        let ranked = engine.rank(
+            [zeta, alphaB, alphaA],
+            current: current,
+            activeQueueTrackIDs: [],
+            recentArtistNames: []
+        )
+
+        XCTAssertEqual(ranked.map(\.id), ["track-a", "track-b", "track-z"])
+    }
+
     func testPenalizesDuplicateAlreadyInQueue() {
         let engine = ScoringEngine()
         let current = CurrentTrackContext(trackID: "current", title: "Current", artistName: "Artist A")

@@ -1,2 +1,9 @@
+# Gradle local state
+.gradle/
+build/
+
+# Android build outputs
+app/build/
+
 # Apple-provided MusicKit Android SDK binaries
 app/libs/*.aar

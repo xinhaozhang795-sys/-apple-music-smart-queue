@@ -1,0 +1,7 @@
+# Swift Package Manager build output
+.build/
+
+# Xcode user state
+DerivedData/
+*.xcuserstate
+xcuserdata/

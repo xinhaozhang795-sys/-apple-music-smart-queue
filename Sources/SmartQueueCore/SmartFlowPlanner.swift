@@ -25,7 +25,7 @@ public struct SmartFlowPlanner: Sendable {
         var remaining = candidates.filter { $0.id != current.trackID }
         var selected: [ScoredCandidate] = []
         var usedIDs = activeQueueTrackIDs
-        var usedArtists = recentArtistNames
+        var usedArtists = ScoringEngine.normalizedArtistNames(recentArtistNames)
         var previous = current
 
         while selected.count < limit && !remaining.isEmpty {
@@ -39,7 +39,7 @@ public struct SmartFlowPlanner: Sendable {
             guard let best = ranked.first(where: { !usedIDs.contains($0.id) }) else { break }
             selected.append(best)
             usedIDs.insert(best.id)
-            usedArtists.insert(best.candidate.artistName)
+            usedArtists.insert(ScoringEngine.normalizeArtistName(best.candidate.artistName))
             previous = CurrentTrackContext(
                 trackID: best.candidate.id,
                 title: best.candidate.title,
