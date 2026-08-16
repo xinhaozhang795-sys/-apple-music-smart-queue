@@ -28,7 +28,7 @@ public struct QueuePlanner: Sendable {
         var selectedIDs = activeQueueTrackIDs
         selectedIDs.reserveCapacity(activeQueueTrackIDs.count + policy.refillBatchSize)
 
-        var selectedArtists = recentArtistNames
+        var selectedArtists = ScoringEngine.normalizedArtistNames(recentArtistNames)
         selectedArtists.reserveCapacity(recentArtistNames.count + policy.refillBatchSize)
 
         // First pass prioritizes artist diversity while always avoiding exact
@@ -37,11 +37,12 @@ public struct QueuePlanner: Sendable {
         for candidate in ranked {
             guard selected.count < policy.refillBatchSize else { break }
             guard !selectedIDs.contains(candidate.id) else { continue }
-            guard !selectedArtists.contains(candidate.candidate.artistName) else { continue }
+            let artistName = ScoringEngine.normalizeArtistName(candidate.candidate.artistName)
+            guard !selectedArtists.contains(artistName) else { continue }
 
             selected.append(candidate)
             selectedIDs.insert(candidate.id)
-            selectedArtists.insert(candidate.candidate.artistName)
+            selectedArtists.insert(artistName)
         }
 
         if selected.count < policy.refillBatchSize {
