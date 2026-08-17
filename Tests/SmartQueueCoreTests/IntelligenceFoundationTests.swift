@@ -19,7 +19,8 @@ final class IntelligenceFoundationTests: XCTestCase {
             outcome: .skipped
         )
 
-        XCTAssertEqual(event.progress, 0.5, accuracy: 0.0001)
+        XCTAssertNotNil(event.progress)
+        XCTAssertEqual(event.progress ?? 0, 0.5, accuracy: 0.0001)
     }
 
     func testListeningEventClampsProgressAndDurationInputs() {
