@@ -1,7 +1,7 @@
 import Foundation
 
 /// Descriptive audio features used for selection, not audio processing.
-public struct AudioFeatures: Equatable, Sendable {
+public struct AudioFeatures: Equatable, Hashable, Sendable {
     public var bpm: Double?
     public var key: String?
     public var energy: Double?
