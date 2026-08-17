@@ -6,13 +6,11 @@ import SmartQueueCore
 public final class PlaybackMonitor {
     private struct PlaybackSession {
         let trackID: MusicItemID
-        let startedAt: Date
         let duration: TimeInterval?
         var lastObservedTime: TimeInterval
 
-        init(trackID: MusicItemID, startedAt: Date, duration: TimeInterval?, initialTime: TimeInterval) {
+        init(trackID: MusicItemID, duration: TimeInterval?, initialTime: TimeInterval) {
             self.trackID = trackID
-            self.startedAt = startedAt
             self.duration = duration
             self.lastObservedTime = max(0, initialTime)
         }
@@ -37,7 +35,12 @@ public final class PlaybackMonitor {
     }
 
     public func start(onChange: @escaping @MainActor (_ trackID: MusicItemID?, _ status: MusicPlayer.PlaybackStatus) -> Void) {
-        stop()
+        // Starting the monitor is lifecycle control, not a listening action.
+        // Never convert an existing session into a skip merely because the
+        // polling task is being restarted.
+        task?.cancel()
+        task = nil
+
         task = Task { @MainActor [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
@@ -60,7 +63,11 @@ public final class PlaybackMonitor {
                     onChange(trackID, status)
                 }
 
-                try? await Task.sleep(for: .seconds(1))
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    break
+                }
             }
         }
     }
@@ -68,12 +75,14 @@ public final class PlaybackMonitor {
     public func stop() {
         task?.cancel()
         task = nil
-        finishActiveSession(forceOutcome: .skipped)
+        // Stopping observation is not evidence that the user skipped a song.
+        // The active session is deliberately retained so a later start() can
+        // continue observing it without fabricating negative feedback.
     }
 
     private func observe(trackID: MusicItemID?, status: MusicPlayer.PlaybackStatus, time: TimeInterval, duration: TimeInterval?) {
         if let active = session, active.trackID != trackID {
-            finishActiveSession(forceOutcome: nil)
+            finishActiveSession()
         }
 
         if let active = session, status == .stopped {
@@ -86,26 +95,45 @@ public final class PlaybackMonitor {
         if session == nil || session?.trackID != trackID {
             let now = Date()
             let outcome: ListeningEvent.Outcome = lastFinishedTrackID == trackID ? .replayed : .started
-            session = PlaybackSession(trackID: trackID, startedAt: now, duration: duration, initialTime: time)
-            appendEvent(ListeningEvent(trackID: trackID.rawValue, timestamp: now, elapsedTime: time, duration: duration, outcome: outcome))
+            session = PlaybackSession(trackID: trackID, duration: duration, initialTime: time)
+            appendEvent(
+                ListeningEvent(
+                    trackID: trackID.rawValue,
+                    timestamp: now,
+                    elapsedTime: time,
+                    duration: duration,
+                    outcome: outcome
+                )
+            )
             return
         }
 
         guard var active = session else { return }
-        // Only advance the high-water mark. Seeking backward must never erase
-        // the trustworthy progress that will be used when this session ends.
+
+        // Keep a high-water mark. A seek backward must not erase trustworthy
+        // evidence about how far the user had already listened.
         if time > active.lastObservedTime + 0.25 {
             active.lastObservedTime = time
         }
         session = active
     }
 
-    private func finishActiveSession(forceOutcome: ListeningEvent.Outcome?) {
+    private func finishActiveSession(forceOutcome: ListeningEvent.Outcome? = nil) {
         guard let active = session else { return }
         session = nil
+
         let outcome = forceOutcome ?? (isNearEnd(active) ? .completed : .skipped)
         lastFinishedTrackID = active.trackID
-        appendEvent(ListeningEvent(trackID: active.trackID.rawValue, timestamp: Date(), elapsedTime: active.lastObservedTime, duration: active.duration, outcome: outcome))
+
+        appendEvent(
+            ListeningEvent(
+                trackID: active.trackID.rawValue,
+                timestamp: Date(),
+                elapsedTime: active.lastObservedTime,
+                duration: active.duration,
+                outcome: outcome
+            )
+        )
     }
 
     private func isNearEnd(_ session: PlaybackSession) -> Bool {
@@ -116,12 +144,17 @@ public final class PlaybackMonitor {
 
     private static func duration(for entry: MusicPlayer.Queue.Entry?) -> TimeInterval? {
         guard let entry else { return nil }
+
+        // A queue entry may represent a custom segment of a song. When that
+        // happens, the segment length is the correct completion denominator.
         if let endTime = entry.endTime, let startTime = entry.startTime, endTime > startTime {
             return endTime - startTime
         }
+
         if case let .song(song) = entry.item, let duration = song.duration, duration > 0 {
             return duration
         }
+
         return nil
     }
 
