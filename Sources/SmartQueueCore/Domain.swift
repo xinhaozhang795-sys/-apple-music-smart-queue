@@ -10,6 +10,7 @@ public struct TrackCandidate: Identifiable, Hashable, Sendable {
     public let freshness: Double
     public let explorationValue: Double
     public let diversity: Double
+    public let audioFeatures: AudioFeatures?
 
     public init(
         id: String,
@@ -20,7 +21,8 @@ public struct TrackCandidate: Identifiable, Hashable, Sendable {
         continuity: Double = 0,
         freshness: Double = 0,
         explorationValue: Double = 0,
-        diversity: Double = 0
+        diversity: Double = 0,
+        audioFeatures: AudioFeatures? = nil
     ) {
         self.id = id
         self.title = title
@@ -31,6 +33,7 @@ public struct TrackCandidate: Identifiable, Hashable, Sendable {
         self.freshness = freshness
         self.explorationValue = explorationValue
         self.diversity = diversity
+        self.audioFeatures = audioFeatures
     }
 }
 
@@ -46,12 +49,20 @@ public struct CurrentTrackContext: Sendable {
     public let title: String
     public let artistName: String
     public let artistID: String?
+    public let audioFeatures: AudioFeatures?
 
-    public init(trackID: String, title: String, artistName: String, artistID: String? = nil) {
+    public init(
+        trackID: String,
+        title: String,
+        artistName: String,
+        artistID: String? = nil,
+        audioFeatures: AudioFeatures? = nil
+    ) {
         self.trackID = trackID
         self.title = title
         self.artistName = artistName
         self.artistID = artistID
+        self.audioFeatures = audioFeatures
     }
 }
 
@@ -66,12 +77,12 @@ public struct QueuePolicy: Sendable {
     public var continuityWeight: Double
     public var explorationWeight: Double
     public var freshnessWeight: Double
-    public var diversityWeight: Double
+    public var diversityWeight
+    public var transitionWeight: Double
 
     public var duplicatePenalty: Double
     public var artistRepeatPenalty: Double
 
-    // Kept as aliases for compatibility with the first V0.1 scoring API.
     public var personalRecommendationWeight: Double { appleRecommendationWeight }
     public var affinityWeight: Double { personalPreferenceWeight }
 
@@ -85,6 +96,7 @@ public struct QueuePolicy: Sendable {
         explorationWeight: Double = 0.15,
         freshnessWeight: Double = 0.10,
         diversityWeight: Double = 0.05,
+        transitionWeight: Double = 0.10,
         duplicatePenalty: Double = 0.10,
         artistRepeatPenalty: Double = 0.10
     ) {
@@ -97,6 +109,7 @@ public struct QueuePolicy: Sendable {
         self.explorationWeight = explorationWeight
         self.freshnessWeight = freshnessWeight
         self.diversityWeight = diversityWeight
+        self.transitionWeight = transitionWeight
         self.duplicatePenalty = duplicatePenalty
         self.artistRepeatPenalty = artistRepeatPenalty
     }
@@ -106,10 +119,12 @@ public struct ScoredCandidate: Identifiable, Sendable {
     public let id: String
     public let candidate: TrackCandidate
     public let score: Double
+    public let transitionScore: Double
 
-    public init(candidate: TrackCandidate, score: Double) {
+    public init(candidate: TrackCandidate, score: Double, transitionScore: Double = 0.5) {
         self.id = candidate.id
         self.candidate = candidate
         self.score = score
+        self.transitionScore = transitionScore
     }
 }
