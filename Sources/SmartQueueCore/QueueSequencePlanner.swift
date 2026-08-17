@@ -1,13 +1,18 @@
 import Foundation
 
 /// Builds a short queue sequence while preserving the existing candidate score.
-/// Transition quality is used only as a local tie-breaker between otherwise
-/// competitive candidates, keeping user preference and policy scoring primary.
+/// Transition quality is re-evaluated for each adjacent pair without double-counting
+/// the transition score that was used during the initial candidate ranking.
 public struct QueueSequencePlanner: Sendable {
     private let transitionScorer: TransitionScorer
+    private let transitionWeight: Double
 
-    public init(transitionScorer: TransitionScorer = TransitionScorer()) {
+    public init(
+        transitionScorer: TransitionScorer = TransitionScorer(),
+        transitionWeight: Double = 0.05
+    ) {
         self.transitionScorer = transitionScorer
+        self.transitionWeight = transitionWeight
     }
 
     public func plan(
@@ -48,17 +53,21 @@ public struct QueueSequencePlanner: Sendable {
         _ candidate: ScoredCandidate,
         previousFeatures: AudioFeatures?
     ) -> Double {
+        let baseScore = candidate.score - candidate.transitionScore * transitionWeight
         let transition = transitionScorer.score(
             TransitionContext(current: previousFeatures, candidate: candidate.candidate.audioFeatures)
         ).overall
-        return candidate.score + transition * 0.05
+        return baseScore + transition * transitionWeight
     }
 
     private func tieBreak(
         _ lhs: ScoredCandidate,
         before rhs: ScoredCandidate
     ) -> Bool {
-        if lhs.score != rhs.score { return lhs.score > rhs.score }
+        let lhsBaseScore = lhs.score - lhs.transitionScore * transitionWeight
+        let rhsBaseScore = rhs.score - rhs.transitionScore * transitionWeight
+
+        if lhsBaseScore != rhsBaseScore { return lhsBaseScore > rhsBaseScore }
         return lhs.candidate.id < rhs.candidate.id
     }
 }
