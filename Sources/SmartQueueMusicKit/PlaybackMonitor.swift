@@ -14,6 +14,7 @@ public final class PlaybackMonitor {
 
     public private(set) var currentTrackID: MusicItemID?
     public private(set) var playbackStatus: MusicPlayer.PlaybackStatus = .stopped
+    public private(set) var playbackTime: TimeInterval = 0
     public private(set) var listeningMemory: ListeningMemory
 
     public init(listeningMemory: ListeningMemory = ListeningMemory(), memoryLimit: Int = 500) {
@@ -22,7 +23,8 @@ public final class PlaybackMonitor {
     }
 
     /// Starts a lightweight polling loop. Playback changes are recorded as
-    /// listening events and also exposed to the host for queue refill decisions.
+    /// listening events and the current playhead is exposed for later
+    /// completion/skip classification.
     public func start(onChange: @escaping @MainActor (_ trackID: MusicItemID?, _ status: MusicPlayer.PlaybackStatus) -> Void) {
         stop()
         task = Task { @MainActor [weak self] in
@@ -36,10 +38,12 @@ public final class PlaybackMonitor {
                 }
 
                 let status = self.player.state.playbackStatus
+                let time = self.player.playbackTime
                 let changed = trackID != self.lastTrackID || status != self.lastPlaybackStatus
 
                 self.currentTrackID = trackID
                 self.playbackStatus = status
+                self.playbackTime = time.isFinite && time >= 0 ? time : 0
 
                 if changed {
                     self.recordTransition(to: trackID, status: status)
@@ -69,6 +73,7 @@ public final class PlaybackMonitor {
                 ListeningEvent(
                     trackID: previousTrack.rawValue,
                     timestamp: now,
+                    progress: playbackTime > 0 ? playbackTime : nil,
                     outcome: .skipped
                 )
             )
