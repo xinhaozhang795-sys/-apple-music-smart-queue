@@ -34,12 +34,10 @@ public struct TransitionScorer: Sendable {
     private func normalizedBPMContinuity(_ lhs: Double?, _ rhs: Double?) -> Double {
         guard let lhs, let rhs, lhs > 0, rhs > 0 else { return 0.5 }
 
-        // Prefer direct proximity while also recognizing common half/double-time relationships.
-        let ratios = [lhs / rhs, rhs / lhs]
-        let bestRatioDistance = ratios
-            .map { abs(log2($0)) }
-            .min() ?? 1
+        let direct = 1 - min(abs(lhs - rhs) / max(lhs, rhs), 1)
+        let halfTime = 1 - min(abs(lhs * 2 - rhs) / max(lhs * 2, rhs), 1)
+        let doubleTime = 1 - min(abs(rhs * 2 - lhs) / max(rhs * 2, lhs), 1)
 
-        return max(0, 1 - min(bestRatioDistance, 1))
+        return max(direct, halfTime, doubleTime)
     }
 }
