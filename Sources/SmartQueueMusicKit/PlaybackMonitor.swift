@@ -8,14 +8,12 @@ public final class PlaybackMonitor {
         let trackID: MusicItemID
         let startedAt: Date
         var lastObservedTime: TimeInterval
-        var lastProgressAt: Date
         var reachedEnd: Bool
 
         init(trackID: MusicItemID, startedAt: Date, initialTime: TimeInterval) {
             self.trackID = trackID
             self.startedAt = startedAt
             self.lastObservedTime = max(0, initialTime)
-            self.lastProgressAt = startedAt
             self.reachedEnd = false
         }
     }
@@ -68,53 +66,52 @@ public final class PlaybackMonitor {
     public func stop() {
         task?.cancel()
         task = nil
-        finishActiveSession(as: .neutral)
+        finishActiveSession()
     }
 
     private func observe(trackID: MusicItemID?, status: MusicPlayer.PlaybackStatus, time: TimeInterval) {
-        let now = Date()
-
         if let active = session, active.trackID != trackID {
-            finishActiveSession(as: completionOutcome(for: active))
+            finishActiveSession()
         }
 
-        guard let trackID, status == .playing else {
-            return
-        }
+        guard let trackID, status == .playing else { return }
 
         if session == nil || session?.trackID != trackID {
+            let now = Date()
             session = PlaybackSession(trackID: trackID, startedAt: now, initialTime: time)
-            appendEvent(ListeningEvent(trackID: trackID.rawValue, timestamp: now, progress: normalizedProgress(time), outcome: .started))
+            appendEvent(
+                ListeningEvent(
+                    trackID: trackID.rawValue,
+                    timestamp: now,
+                    outcome: .started
+                )
+            )
             return
         }
 
         guard var active = session else { return }
+
+        // Keep the last valid playhead for the active track. This value is used
+        // when the next track appears, so the previous track never receives the
+        // new track's near-zero playback time.
         if time > active.lastObservedTime + 0.25 {
             active.lastObservedTime = time
-            active.lastProgressAt = now
         }
 
-        // MusicKit may report stopped/paused around the end of a track. A near-zero
-        // playhead after substantial forward progress is treated as an end marker.
+        // A substantial forward position followed by a reset is a useful end
+        // marker. It is deliberately conservative because MusicKit does not
+        // expose duration through this monitor.
         if time < active.lastObservedTime * 0.25 && active.lastObservedTime > 30 {
             active.reachedEnd = true
         }
         session = active
     }
 
-    private func finishActiveSession(as outcome: ListeningEvent.Outcome) {
+    private func finishActiveSession() {
         guard let active = session else { return }
         session = nil
 
-        let progress = normalizedProgress(active.lastObservedTime)
-        let finalOutcome: ListeningEvent.Outcome
-        if active.reachedEnd || outcome == .completed {
-            finalOutcome = .completed
-        } else if outcome == .neutral {
-            finalOutcome = .started
-        } else {
-            finalOutcome = .skipped
-        }
+        let finalOutcome: ListeningEvent.Outcome = active.reachedEnd ? .completed : .skipped
 
         if finalOutcome == .completed && lastCompletedTrackID == active.trackID {
             return
@@ -127,21 +124,10 @@ public final class PlaybackMonitor {
             ListeningEvent(
                 trackID: active.trackID.rawValue,
                 timestamp: Date(),
-                progress: progress,
+                progress: active.lastObservedTime > 0 ? active.lastObservedTime : nil,
                 outcome: finalOutcome
             )
         )
-    }
-
-    private func completionOutcome(for active: PlaybackSession) -> ListeningEvent.Outcome {
-        active.reachedEnd ? .completed : .skipped
-    }
-
-    private func normalizedProgress(_ time: TimeInterval) -> Double? {
-        // Duration is intentionally not inferred here. Until a reliable duration
-        // source is available, progress remains nil rather than pretending that
-        // elapsed seconds equal completion percentage.
-        time > 0 ? nil : nil
     }
 
     private func appendEvent(_ event: ListeningEvent) {
