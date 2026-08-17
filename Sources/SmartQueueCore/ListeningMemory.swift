@@ -14,6 +14,8 @@ public struct ListeningEvent: Equatable, Sendable, Hashable {
     public let artistID: String?
     public let albumID: String?
     public let timestamp: Date
+    public let elapsedTime: TimeInterval?
+    public let duration: TimeInterval?
     public let progress: Double?
     public let outcome: Outcome
 
@@ -22,6 +24,8 @@ public struct ListeningEvent: Equatable, Sendable, Hashable {
         artistID: String? = nil,
         albumID: String? = nil,
         timestamp: Date = .now,
+        elapsedTime: TimeInterval? = nil,
+        duration: TimeInterval? = nil,
         progress: Double? = nil,
         outcome: Outcome
     ) {
@@ -29,7 +33,15 @@ public struct ListeningEvent: Equatable, Sendable, Hashable {
         self.artistID = artistID
         self.albumID = albumID
         self.timestamp = timestamp
-        self.progress = progress.map { min(1, max(0, $0)) }
+        self.elapsedTime = elapsedTime.map { max(0, $0) }
+        self.duration = duration.map { max(0, $0) }
+        if let progress {
+            self.progress = min(1, max(0, progress))
+        } else if let elapsedTime, let duration, duration > 0 {
+            self.progress = min(1, max(0, elapsedTime / duration))
+        } else {
+            self.progress = nil
+        }
         self.outcome = outcome
     }
 }
