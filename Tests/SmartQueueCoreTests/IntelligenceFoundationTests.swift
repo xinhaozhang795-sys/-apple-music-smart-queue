@@ -11,6 +11,31 @@ final class IntelligenceFoundationTests: XCTestCase {
         XCTAssertEqual(memory.completionCount(for: "b"), 1)
     }
 
+    func testListeningEventDerivesNormalizedProgressFromDuration() {
+        let event = ListeningEvent(
+            trackID: "track",
+            elapsedTime: 90,
+            duration: 180,
+            outcome: .skipped
+        )
+
+        XCTAssertEqual(event.progress, 0.5, accuracy: 0.0001)
+    }
+
+    func testListeningEventClampsProgressAndDurationInputs() {
+        let event = ListeningEvent(
+            trackID: "track",
+            elapsedTime: -10,
+            duration: -1,
+            progress: 2,
+            outcome: .started
+        )
+
+        XCTAssertEqual(event.elapsedTime, 0)
+        XCTAssertEqual(event.duration, 0)
+        XCTAssertEqual(event.progress, 1)
+    }
+
     func testTasteProfileLearnsTowardObservedFeatures() {
         let profile = TasteProfile()
         let features = AudioFeatures(energy: 1, danceability: 1, valence: 0)
