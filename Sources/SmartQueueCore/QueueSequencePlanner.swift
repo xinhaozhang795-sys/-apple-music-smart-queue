@@ -4,7 +4,11 @@ import Foundation
 /// Transition quality is used only as a local tie-breaker between otherwise
 /// competitive candidates, keeping user preference and policy scoring primary.
 public struct QueueSequencePlanner: Sendable {
-    public init() {}
+    private let transitionScorer: TransitionScorer
+
+    public init(transitionScorer: TransitionScorer = TransitionScorer()) {
+        self.transitionScorer = transitionScorer
+    }
 
     public func plan(
         candidates: [ScoredCandidate],
@@ -20,20 +24,18 @@ public struct QueueSequencePlanner: Sendable {
         var previousFeatures = current.audioFeatures
 
         while result.count < limit, !remaining.isEmpty {
-            let bestIndex = remaining.indices.min { lhs, rhs in
-                let left = transitionScore(from: previousFeatures, to: remaining[lhs].candidate.audioFeatures)
-                let right = transitionScore(from: previousFeatures, to: remaining[rhs].candidate.audioFeatures)
-                let leftValue = combinedValue(remaining[lhs], transition: left)
-                let rightValue = combinedValue(remaining[rhs], transition: right)
+            var bestIndex = remaining.startIndex
+            var bestValue = selectionValue(remaining[bestIndex], previousFeatures: previousFeatures)
 
-                if leftValue != rightValue { return leftValue > rightValue }
-                if remaining[lhs].score != remaining[rhs].score {
-                    return remaining[lhs].score > remaining[rhs].score
+            for index in remaining.indices.dropFirst() {
+                let value = selectionValue(remaining[index], previousFeatures: previousFeatures)
+                if value > bestValue ||
+                    (value == bestValue && tieBreak(remaining[index], before: remaining[bestIndex])) {
+                    bestIndex = index
+                    bestValue = value
                 }
-                return remaining[lhs].candidate.id < remaining[rhs].candidate.id
             }
 
-            guard let bestIndex else { break }
             let selected = remaining.remove(at: bestIndex)
             previousFeatures = selected.candidate.audioFeatures
             result.append(selected)
@@ -42,19 +44,21 @@ public struct QueueSequencePlanner: Sendable {
         return result
     }
 
-    private func transitionScore(
-        from current: AudioFeatures?,
-        to candidate: AudioFeatures?
+    private func selectionValue(
+        _ candidate: ScoredCandidate,
+        previousFeatures: AudioFeatures?
     ) -> Double {
-        TransitionScorer().score(
-            TransitionContext(current: current, candidate: candidate)
+        let transition = transitionScorer.score(
+            TransitionContext(current: previousFeatures, candidate: candidate.candidate.audioFeatures)
         ).overall
+        return candidate.score + transition * 0.05
     }
 
-    private func combinedValue(
-        _ candidate: ScoredCandidate,
-        transition: Double
-    ) -> Double {
-        candidate.score + transition * 0.05
+    private func tieBreak(
+        _ lhs: ScoredCandidate,
+        before rhs: ScoredCandidate
+    ) -> Bool {
+        if lhs.score != rhs.score { return lhs.score > rhs.score }
+        return lhs.candidate.id < rhs.candidate.id
     }
 }
