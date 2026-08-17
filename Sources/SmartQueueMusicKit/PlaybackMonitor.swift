@@ -59,18 +59,34 @@ public final class PlaybackMonitor {
     }
 
     private func recordTransition(to trackID: MusicItemID?, status: MusicPlayer.PlaybackStatus) {
-        guard let trackID else { return }
         let now = Date()
 
-        if status == .playing {
-            let isReplay = lastEventTrackID == trackID
-            let outcome: ListeningEvent.Outcome = isReplay ? .replayed : .started
-            appendEvent(ListeningEvent(trackID: trackID.rawValue, timestamp: now, outcome: outcome))
-            lastEventTrackID = trackID
-            lastEventTimestamp = now
-        } else if status == .paused, let previousTrack = lastEventTrackID, previousTrack != trackID {
-            appendEvent(ListeningEvent(trackID: previousTrack.rawValue, timestamp: now, outcome: .skipped))
+        if let previousTrack = lastEventTrackID,
+           let trackID,
+           previousTrack != trackID,
+           lastPlaybackStatus == .playing {
+            appendEvent(
+                ListeningEvent(
+                    trackID: previousTrack.rawValue,
+                    timestamp: now,
+                    outcome: .skipped
+                )
+            )
         }
+
+        guard let trackID else { return }
+        guard status == .playing else { return }
+
+        let outcome: ListeningEvent.Outcome = lastEventTrackID == trackID ? .replayed : .started
+        appendEvent(
+            ListeningEvent(
+                trackID: trackID.rawValue,
+                timestamp: now,
+                outcome: outcome
+            )
+        )
+        lastEventTrackID = trackID
+        lastEventTimestamp = now
     }
 
     private func appendEvent(_ event: ListeningEvent) {
