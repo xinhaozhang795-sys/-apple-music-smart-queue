@@ -15,7 +15,7 @@ public struct TasteProfile: Equatable, Sendable {
     ) {
         self.preferredEnergy = Self.clamp(preferredEnergy)
         self.preferredValence = Self.clamp(preferredValence)
-        self.preferredDanceability = Self.clamp(danceability: preferredDanceability)
+        self.preferredDanceability = Self.clamp(preferredDanceability)
         self.explorationPreference = Self.clamp(explorationPreference)
     }
 
@@ -38,5 +38,4 @@ public struct TasteProfile: Equatable, Sendable {
 
     private static func clamp(_ value: Double) -> Double { min(1, max(0, value)) }
     private static func clampSigned(_ value: Double) -> Double { min(1, max(-1, value)) }
-    private static func clamp(danceability value: Double) -> Double { clamp(value) }
 }
