@@ -77,7 +77,7 @@ public struct QueuePolicy: Sendable {
     public var continuityWeight: Double
     public var explorationWeight: Double
     public var freshnessWeight: Double
-    public var diversityWeight
+    public var diversityWeight: Double
     public var transitionWeight: Double
 
     public var duplicatePenalty: Double
@@ -96,7 +96,7 @@ public struct QueuePolicy: Sendable {
         explorationWeight: Double = 0.15,
         freshnessWeight: Double = 0.10,
         diversityWeight: Double = 0.05,
-        transitionWeight: Double = 0.10,
+        transitionWeight: Double = 0.05,
         duplicatePenalty: Double = 0.10,
         artistRepeatPenalty: Double = 0.10
     ) {
