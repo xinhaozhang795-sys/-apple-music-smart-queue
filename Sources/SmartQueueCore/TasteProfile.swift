@@ -15,17 +15,17 @@ public struct TasteProfile: Equatable, Sendable {
     ) {
         self.preferredEnergy = Self.clamp(preferredEnergy)
         self.preferredValence = Self.clamp(preferredValence)
-        self.preferredDanceability = Self.clamp(preferredDanceability)
+        self.preferredDanceability = Self.clamp(danceability: preferredDanceability)
         self.explorationPreference = Self.clamp(explorationPreference)
     }
 
     public func updated(with features: AudioFeatures, signal: Double, learningRate: Double = 0.08) -> TasteProfile {
         let rate = Self.clamp(learningRate)
-        let weight = Self.clamp(signal)
+        let signedWeight = Self.clampSigned(signal)
 
         func learn(_ current: Double, _ observed: Double?) -> Double {
             guard let observed else { return current }
-            return current + (observed - current) * rate * weight
+            return Self.clamp(current + (observed - current) * rate * signedWeight)
         }
 
         return TasteProfile(
@@ -37,4 +37,6 @@ public struct TasteProfile: Equatable, Sendable {
     }
 
     private static func clamp(_ value: Double) -> Double { min(1, max(0, value)) }
+    private static func clampSigned(_ value: Double) -> Double { min(1, max(-1, value)) }
+    private static func clamp(danceability value: Double) -> Double { clamp(value) }
 }
