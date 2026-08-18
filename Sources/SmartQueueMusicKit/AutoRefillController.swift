@@ -1,6 +1,7 @@
 import Foundation
 import SmartQueueCore
 
+@available(iOS 18.0, *)
 @MainActor
 public final class AutoRefillController {
     private let coordinator: SmartQueueCoordinator
@@ -28,7 +29,7 @@ public final class AutoRefillController {
     }
 
     /// Plans and appends a new batch when the remaining queue reaches the refill threshold.
-    /// The same operation also computes and applies the transition policy for the
+    /// The same operation computes and applies the transition policy for the
     /// current-track -> next-track edge before mutating the queue.
     public func handleQueueCount(
         _ remainingCount: Int,
@@ -53,8 +54,6 @@ public final class AutoRefillController {
             guard !batch.isEmpty else { return }
             try await coordinator.appendBatch(batch, current: current)
         } catch {
-            // Preserve the error for the host UI/logging layer instead of silently
-            // converting an Apple Music or network failure into a no-op.
             lastErrorDescription = String(describing: error)
         }
     }
