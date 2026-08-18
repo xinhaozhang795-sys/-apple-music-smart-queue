@@ -15,8 +15,7 @@ public final class ApplicationMusicPlaybackEngine: @unchecked Sendable, Playback
         PlaybackCapabilities(
             canSeek: true,
             canPreloadNext: false,
-            canCrossfade: true,
-            maxCrossfadeDuration: 30
+            canCrossfade: true
         )
     }
 
@@ -56,11 +55,9 @@ public final class ApplicationMusicPlaybackEngine: @unchecked Sendable, Playback
     public func apply(transition: PlaybackTransition) async throws {
         switch transition.reason {
         case .crossfade:
-            let duration = min(max(0, transition.duration), capabilities.maxCrossfadeDuration)
-            player.transition = .crossfade(duration: duration)
-        case .gapless:
-            player.transition = .none
-        case .hardCut:
+            guard capabilities.canCrossfade else { return }
+            player.transition = .crossfade(duration: max(0, transition.duration))
+        case .gapless, .hardCut:
             player.transition = .none
         }
     }
