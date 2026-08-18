@@ -8,12 +8,20 @@ on:
       - main
       - refactor/smart-queue-2-intelligence
 
+permissions:
+  contents: read
+
+concurrency:
+  group: swift-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   swift-package:
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -22,12 +30,14 @@ jobs:
 
       - name: Show Xcode and package information
         run: |
+          set -euo pipefail
           xcodebuild -version
           swift --version
           xcodebuild -list -json -workspace .
 
       - name: Resolve Swift package dependencies
         run: |
+          set -euo pipefail
           xcodebuild \
             -resolvePackageDependencies \
             -workspace . \
@@ -35,6 +45,7 @@ jobs:
 
       - name: Build iOS package
         run: |
+          set -euo pipefail
           xcodebuild \
             -workspace . \
             -scheme AppleMusicSmartQueue-Package \
@@ -44,6 +55,7 @@ jobs:
 
       - name: Run Swift package tests on iOS Simulator
         run: |
+          set -euo pipefail
           xcodebuild \
             -workspace . \
             -scheme AppleMusicSmartQueue-Package \
