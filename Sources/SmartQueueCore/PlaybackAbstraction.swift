@@ -57,7 +57,7 @@ public enum TransitionReason: Sendable, Equatable {
     case hardCut
 }
 
-/// Minimal contract implemented by platform-specific playback adapters.
+/// Minimal contract implemented by every platform-specific playback adapter.
 public protocol PlaybackEngine: Sendable {
     var capabilities: PlaybackCapabilities { get }
     var state: PlaybackState { get }
@@ -67,6 +67,14 @@ public protocol PlaybackEngine: Sendable {
     func skipNext() async throws
     func skipPrevious() async throws
     func seek(to position: TimeInterval) async throws
+}
+
+/// Optional capability for platforms that can explicitly preload the next track.
+public protocol PlaybackPreloading: PlaybackEngine {
     func preloadNext(trackID: String) async throws
+}
+
+/// Optional capability for platforms that can explicitly control transitions.
+public protocol PlaybackTransitionControlling: PlaybackEngine {
     func apply(transition: PlaybackTransition) async throws
 }
