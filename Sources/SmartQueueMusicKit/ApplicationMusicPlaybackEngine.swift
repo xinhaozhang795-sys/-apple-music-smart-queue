@@ -22,7 +22,7 @@ public final class ApplicationMusicPlaybackEngine: @unchecked Sendable, Playback
     public var state: PlaybackState {
         let currentID = player.queue.currentEntry?.id
         let playbackTime = player.playbackTime
-        let position = playbackTime.isFinite ? playbackTime : 0
+        let position = playbackTime.isFinite ? max(0, playbackTime) : 0
         return PlaybackState(
             trackID: currentID,
             position: position,
@@ -58,7 +58,16 @@ public final class ApplicationMusicPlaybackEngine: @unchecked Sendable, Playback
         switch transition.reason {
         case .crossfade:
             guard capabilities.canCrossfade else { return }
-            player.transition = .crossfade(duration: max(0, transition.duration))
+
+            let requestedDuration = max(0, transition.duration)
+            let duration: TimeInterval
+            if let maximum = capabilities.maxCrossfadeDuration {
+                duration = min(requestedDuration, maximum)
+            } else {
+                duration = requestedDuration
+            }
+
+            player.transition = .crossfade(duration: duration)
         case .gapless, .hardCut:
             player.transition = .none
         }
