@@ -4,12 +4,13 @@ import SmartQueueCore
 
 @MainActor
 public final class PlaybackContextProvider {
-    private let player = SystemMusicPlayer.shared
+    private let player: ApplicationMusicPlayer
 
-    public init() {}
+    public init(player: ApplicationMusicPlayer = .shared) {
+        self.player = player
+    }
 
-    /// Returns the track currently known to the system player.
-    /// The app intentionally treats the system player as the playback authority.
+    /// Returns the track currently known to the application Music player.
     public var currentTrackID: String? {
         player.queue.currentEntry?.id
     }
