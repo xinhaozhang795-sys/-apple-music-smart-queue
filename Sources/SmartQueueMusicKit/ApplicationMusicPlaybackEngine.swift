@@ -52,6 +52,8 @@ public final class ApplicationMusicPlaybackEngine: @unchecked Sendable, Playback
         player.playbackTime = max(0, position)
     }
 
+    /// Configures the player's transition policy for the next queue configuration.
+    /// MusicKit requires the transition to be set before the queue is set.
     public func apply(transition: PlaybackTransition) async throws {
         switch transition.reason {
         case .crossfade:
