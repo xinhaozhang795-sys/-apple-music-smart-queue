@@ -14,9 +14,14 @@ public struct PlaybackState: Sendable, Equatable {
         isPlaying: Bool
     ) {
         self.trackID = trackID
-        self.position = max(0, position)
-        self.duration = duration.map { max(0, $0) }
+        self.position = Self.nonNegativeFinite(position)
+        self.duration = duration.map(Self.nonNegativeFinite)
         self.isPlaying = isPlaying
+    }
+
+    private static func nonNegativeFinite(_ value: TimeInterval) -> TimeInterval {
+        guard value.isFinite else { return 0 }
+        return max(0, value)
     }
 }
 
@@ -41,7 +46,12 @@ public struct PlaybackCapabilities: Sendable, Equatable {
         self.canSeek = canSeek
         self.canPreloadNext = canPreloadNext
         self.canCrossfade = canCrossfade
-        self.maxCrossfadeDuration = maxCrossfadeDuration.map { max(0, $0) }
+        self.maxCrossfadeDuration = maxCrossfadeDuration.map(Self.nonNegativeFinite)
+    }
+
+    private static func nonNegativeFinite(_ value: TimeInterval) -> TimeInterval {
+        guard value.isFinite else { return 0 }
+        return max(0, value)
     }
 }
 
@@ -51,8 +61,13 @@ public struct PlaybackTransition: Sendable, Equatable {
     public let reason: TransitionReason
 
     public init(duration: TimeInterval, reason: TransitionReason) {
-        self.duration = max(0, duration)
+        self.duration = Self.nonNegativeFinite(duration)
         self.reason = reason
+    }
+
+    private static func nonNegativeFinite(_ value: TimeInterval) -> TimeInterval {
+        guard value.isFinite else { return 0 }
+        return max(0, value)
     }
 }
 
