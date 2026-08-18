@@ -8,7 +8,7 @@ public struct QueuePlanner: Sendable {
     public init(policy: QueuePolicy = QueuePolicy()) {
         self.policy = policy
         self.scoringEngine = ScoringEngine(policy: policy)
-        self.sequencePlanner = QueueSequencePlanner()
+        self.sequencePlanner = QueueSequencePlanner(transitionWeight: policy.transitionWeight)
     }
 
     public func plan(
