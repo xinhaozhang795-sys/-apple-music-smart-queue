@@ -21,22 +21,27 @@ public struct PlaybackState: Sendable, Equatable {
 }
 
 /// Capabilities reported by a platform playback implementation.
+///
+/// Capability values describe platform/API support. They do not guarantee that
+/// a transition will be applied for every pair of tracks or playback scenario.
 public struct PlaybackCapabilities: Sendable, Equatable {
     public let canSeek: Bool
     public let canPreloadNext: Bool
     public let canCrossfade: Bool
-    public let maxCrossfadeDuration: TimeInterval
+    /// A platform-declared maximum duration, when one is known.
+    /// `nil` means the platform does not expose a known maximum through this abstraction.
+    public let maxCrossfadeDuration: TimeInterval?
 
     public init(
         canSeek: Bool,
         canPreloadNext: Bool,
         canCrossfade: Bool,
-        maxCrossfadeDuration: TimeInterval
+        maxCrossfadeDuration: TimeInterval? = nil
     ) {
         self.canSeek = canSeek
         self.canPreloadNext = canPreloadNext
         self.canCrossfade = canCrossfade
-        self.maxCrossfadeDuration = max(0, maxCrossfadeDuration)
+        self.maxCrossfadeDuration = maxCrossfadeDuration.map { max(0, $0) }
     }
 }
 
