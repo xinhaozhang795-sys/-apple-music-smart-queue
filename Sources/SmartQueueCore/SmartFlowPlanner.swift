@@ -24,6 +24,7 @@ public struct SmartFlowPlanner: Sendable {
 
         var remaining = candidates.filter { $0.id != current.trackID }
         var selected: [ScoredCandidate] = []
+        selected.reserveCapacity(min(limit, remaining.count))
         var usedIDs = activeQueueTrackIDs
         var usedArtists = recentArtistNames
         var previous = current
@@ -43,7 +44,8 @@ public struct SmartFlowPlanner: Sendable {
             previous = CurrentTrackContext(
                 trackID: best.candidate.id,
                 title: best.candidate.title,
-                artistName: best.candidate.artistName
+                artistName: best.candidate.artistName,
+                audioFeatures: best.candidate.audioFeatures
             )
             remaining.removeAll { $0.id == best.id }
         }
