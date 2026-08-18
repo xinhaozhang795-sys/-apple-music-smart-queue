@@ -8,31 +8,30 @@ public enum MusicQueueControllerError: Error {
 
 @MainActor
 public final class MusicQueueController: MusicPlaybackAdapter {
-    private let player = SystemMusicPlayer.shared
-    private var managedQueueCount = 0
+    private let player: ApplicationMusicPlayer
 
-    public init() {}
+    public init(player: ApplicationMusicPlayer = .shared) {
+        self.player = player
+    }
 
-    /// Loads a new system Music queue from Apple Music song IDs.
+    /// Loads a new application Music queue from Apple Music song IDs.
     ///
     /// This is an explicit queue replacement operation. Auto-refill should use
     /// `appendToQueue(trackIDs:)` so the existing Up Next queue is preserved.
     public func setQueue(trackIDs: [String], play: Bool = false) async throws {
         let songs = try await resolveSongs(trackIDs)
-        player.queue = MusicPlayer.Queue(for: songs)
-        managedQueueCount = songs.count
+        player.queue = ApplicationMusicPlayer.Queue(for: songs)
         if play {
             try await player.play()
         }
     }
 
-    /// Appends playable songs to the existing SystemMusicPlayer queue.
+    /// Appends playable songs to the existing application Music queue.
     /// The currently playing item and existing Up Next entries are preserved.
     public func appendToQueue(trackIDs: [String]) async throws {
         let songs = try await resolveSongs(trackIDs)
         guard !songs.isEmpty else { throw MusicQueueControllerError.noPlayableTracks }
         try await player.queue.insert(songs, position: .tail)
-        managedQueueCount += songs.count
     }
 
     public func play() async throws {
@@ -51,12 +50,10 @@ public final class MusicQueueController: MusicPlaybackAdapter {
         player.state.playbackStatus == .playing
     }
 
-    /// The count tracked by this controller for queues it creates or appends.
-    /// `SystemMusicPlayer.Queue` intentionally does not expose an `entries`
-    /// collection, so an externally modified Music app queue cannot be counted
-    /// reliably through MusicKit.
+    /// ApplicationMusicPlayer exposes its queue entries directly, so this count
+    /// reflects the actual queue rather than a separately maintained estimate.
     public var queueCount: Int {
-        managedQueueCount
+        player.queue.entries.count
     }
 
     public var currentEntry: MusicPlayer.Queue.Entry? {
