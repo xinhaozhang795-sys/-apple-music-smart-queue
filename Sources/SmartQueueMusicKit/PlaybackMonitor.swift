@@ -16,7 +16,7 @@ public final class PlaybackMonitor {
         }
     }
 
-    private let player = SystemMusicPlayer.shared
+    private let player: ApplicationMusicPlayer
     private var task: Task<Void, Never>?
     private var lastTrackID: MusicItemID?
     private var lastPlaybackStatus: MusicPlayer.PlaybackStatus?
@@ -29,7 +29,12 @@ public final class PlaybackMonitor {
     public private(set) var playbackTime: TimeInterval = 0
     public private(set) var listeningMemory: ListeningMemory
 
-    public init(listeningMemory: ListeningMemory = ListeningMemory(), memoryLimit: Int = 500) {
+    public init(
+        player: ApplicationMusicPlayer = .shared,
+        listeningMemory: ListeningMemory = ListeningMemory(),
+        memoryLimit: Int = 500
+    ) {
+        self.player = player
         self.listeningMemory = listeningMemory
         self.memoryLimit = max(1, memoryLimit)
     }
