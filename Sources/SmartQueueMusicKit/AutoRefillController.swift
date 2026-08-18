@@ -27,9 +27,9 @@ public final class AutoRefillController {
         isEnabled = false
     }
 
-    /// Call this whenever the host app receives a queue/playback-state update.
-    /// If the remaining queue is at or below the threshold, a new batch is planned
-    /// and appended. The controller never calls play itself.
+    /// Plans and appends a new batch when the remaining queue reaches the refill threshold.
+    /// The same operation also computes and applies the transition policy for the
+    /// current-track -> next-track edge before mutating the queue.
     public func handleQueueCount(
         _ remainingCount: Int,
         current: CurrentTrackContext,
@@ -51,7 +51,7 @@ public final class AutoRefillController {
                 recentArtistNames: recentArtistNames
             )
             guard !batch.isEmpty else { return }
-            try await coordinator.appendBatch(batch)
+            try await coordinator.appendBatch(batch, current: current)
         } catch {
             // Preserve the error for the host UI/logging layer instead of silently
             // converting an Apple Music or network failure into a no-op.
