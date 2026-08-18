@@ -2,9 +2,11 @@ import Foundation
 
 public struct ScoringEngine: Sendable {
     public let policy: QueuePolicy
+    public let transitionScorer: TransitionScorer
 
     public init(policy: QueuePolicy = QueuePolicy()) {
         self.policy = policy
+        self.transitionScorer = TransitionScorer()
     }
 
     public func score(
@@ -16,6 +18,9 @@ public struct ScoringEngine: Sendable {
         let recommendation = candidate.source == .personalRecommendation ? 1.0 : 0.0
         let duplicate = activeQueueTrackIDs.contains(candidate.id) ? 1.0 : 0.0
         let artistRepeat = recentArtistNames.contains(candidate.artistName) ? 1.0 : 0.0
+        let transition = transitionScorer.score(
+            TransitionContext(current: current.audioFeatures, candidate: candidate.audioFeatures)
+        )
 
         let raw =
             candidate.affinity * policy.personalPreferenceWeight +
@@ -23,11 +28,16 @@ public struct ScoringEngine: Sendable {
             candidate.continuity * policy.continuityWeight +
             candidate.explorationValue * policy.explorationWeight +
             candidate.freshness * policy.freshnessWeight +
-            candidate.diversity * policy.diversityWeight -
+            candidate.diversity * policy.diversityWeight +
+            transition.overall * policy.transitionWeight -
             duplicate * policy.duplicatePenalty -
             artistRepeat * policy.artistRepeatPenalty
 
-        return ScoredCandidate(candidate: candidate, score: raw)
+        return ScoredCandidate(
+            candidate: candidate,
+            score: raw,
+            transitionScore: transition.overall
+        )
     }
 
     public func rank(
@@ -50,7 +60,12 @@ public struct ScoringEngine: Sendable {
             )
         }
 
-        scored.sort { $0.score > $1.score }
+        scored.sort { lhs, rhs in
+            if lhs.score != rhs.score {
+                return lhs.score > rhs.score
+            }
+            return lhs.candidate.id < rhs.candidate.id
+        }
         return scored
     }
 }

@@ -2,11 +2,13 @@ import Foundation
 
 public struct QueuePlanner: Sendable {
     public let scoringEngine: ScoringEngine
+    public let sequencePlanner: QueueSequencePlanner
     public let policy: QueuePolicy
 
     public init(policy: QueuePolicy = QueuePolicy()) {
         self.policy = policy
         self.scoringEngine = ScoringEngine(policy: policy)
+        self.sequencePlanner = QueueSequencePlanner(transitionWeight: policy.transitionWeight)
     }
 
     public func plan(
@@ -31,9 +33,6 @@ public struct QueuePlanner: Sendable {
         var selectedArtists = recentArtistNames
         selectedArtists.reserveCapacity(recentArtistNames.count + policy.refillBatchSize)
 
-        // First pass prioritizes artist diversity while always avoiding exact
-        // track duplicates. The second pass relaxes only the artist constraint
-        // when diversity is too restrictive to fill the requested batch.
         for candidate in ranked {
             guard selected.count < policy.refillBatchSize else { break }
             guard !selectedIDs.contains(candidate.id) else { continue }
@@ -54,6 +53,10 @@ public struct QueuePlanner: Sendable {
             }
         }
 
-        return selected
+        return sequencePlanner.plan(
+            candidates: selected,
+            current: current,
+            limit: selected.count
+        )
     }
 }

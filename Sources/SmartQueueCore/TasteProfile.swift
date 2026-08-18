@@ -24,7 +24,7 @@ public struct TasteProfile: Equatable, Sendable {
         let signedWeight = Self.clampSigned(signal)
 
         func learn(_ current: Double, _ observed: Double?) -> Double {
-            guard let observed else { return current }
+            guard let observed, observed.isFinite else { return current }
             return Self.clamp(current + (observed - current) * rate * signedWeight)
         }
 
@@ -36,6 +36,13 @@ public struct TasteProfile: Equatable, Sendable {
         )
     }
 
-    private static func clamp(_ value: Double) -> Double { min(1, max(0, value)) }
-    private static func clampSigned(_ value: Double) -> Double { min(1, max(-1, value)) }
+    private static func clamp(_ value: Double) -> Double {
+        guard value.isFinite else { return 0.5 }
+        return min(1, max(0, value))
+    }
+
+    private static func clampSigned(_ value: Double) -> Double {
+        guard value.isFinite else { return 0 }
+        return min(1, max(-1, value))
+    }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Descriptive audio features used for selection, not audio processing.
-public struct AudioFeatures: Equatable, Sendable {
+public struct AudioFeatures: Equatable, Hashable, Sendable {
     public var bpm: Double?
     public var key: String?
     public var energy: Double?
@@ -19,13 +19,23 @@ public struct AudioFeatures: Equatable, Sendable {
         acousticness: Double? = nil,
         instrumentalness: Double? = nil
     ) {
-        self.bpm = bpm
+        self.bpm = Self.normalizeBPM(bpm)
         self.key = key
-        self.energy = energy
-        self.danceability = danceability
-        self.valence = valence
-        self.acousticness = acousticness
-        self.instrumentalness = instrumentalness
+        self.energy = Self.normalizeUnit(energy)
+        self.danceability = Self.normalizeUnit(danceability)
+        self.valence = Self.normalizeUnit(valence)
+        self.acousticness = Self.normalizeUnit(acousticness)
+        self.instrumentalness = Self.normalizeUnit(instrumentalness)
+    }
+
+    private static func normalizeUnit(_ value: Double?) -> Double? {
+        guard let value, value.isFinite else { return nil }
+        return min(1, max(0, value))
+    }
+
+    private static func normalizeBPM(_ value: Double?) -> Double? {
+        guard let value, value.isFinite, value > 0 else { return nil }
+        return value
     }
 }
 

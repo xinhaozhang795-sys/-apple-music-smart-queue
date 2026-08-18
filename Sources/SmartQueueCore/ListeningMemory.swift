@@ -33,16 +33,24 @@ public struct ListeningEvent: Equatable, Sendable, Hashable {
         self.artistID = artistID
         self.albumID = albumID
         self.timestamp = timestamp
-        self.elapsedTime = elapsedTime.map { max(0, $0) }
-        self.duration = duration.map { max(0, $0) }
-        if let progress {
+        self.elapsedTime = elapsedTime.map(Self.nonNegativeFinite)
+        self.duration = duration.map(Self.nonNegativeFinite)
+
+        if let progress, progress.isFinite {
             self.progress = min(1, max(0, progress))
-        } else if let elapsedTime, let duration, duration > 0 {
+        } else if let elapsedTime = self.elapsedTime,
+                  let duration = self.duration,
+                  duration > 0 {
             self.progress = min(1, max(0, elapsedTime / duration))
         } else {
             self.progress = nil
         }
         self.outcome = outcome
+    }
+
+    private static func nonNegativeFinite(_ value: TimeInterval) -> TimeInterval {
+        guard value.isFinite else { return 0 }
+        return max(0, value)
     }
 }
 
