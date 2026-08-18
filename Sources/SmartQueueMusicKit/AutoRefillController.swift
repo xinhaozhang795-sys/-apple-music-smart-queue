@@ -8,6 +8,7 @@ public final class AutoRefillController {
 
     public private(set) var isEnabled = false
     public private(set) var isRefilling = false
+    public private(set) var lastErrorDescription: String?
 
     public init(
         coordinator: SmartQueueCoordinator,
@@ -19,6 +20,7 @@ public final class AutoRefillController {
 
     public func start() {
         isEnabled = true
+        lastErrorDescription = nil
     }
 
     public func stop() {
@@ -39,6 +41,7 @@ public final class AutoRefillController {
               remainingCount <= policy.refillThreshold else { return }
 
         isRefilling = true
+        lastErrorDescription = nil
         defer { isRefilling = false }
 
         do {
@@ -50,7 +53,9 @@ public final class AutoRefillController {
             guard !batch.isEmpty else { return }
             try await coordinator.appendBatch(batch)
         } catch {
-            // The host app can surface the error and retry on the next state update.
+            // Preserve the error for the host UI/logging layer instead of silently
+            // converting an Apple Music or network failure into a no-op.
+            lastErrorDescription = String(describing: error)
         }
     }
 }
