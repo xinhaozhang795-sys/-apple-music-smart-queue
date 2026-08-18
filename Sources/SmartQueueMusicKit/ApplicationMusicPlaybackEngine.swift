@@ -41,11 +41,11 @@ public final class ApplicationMusicPlaybackEngine: @unchecked Sendable, Playback
     }
 
     public func skipNext() async throws {
-        player.skipToNextEntry()
+        try await player.skipToNextEntry()
     }
 
     public func skipPrevious() async throws {
-        player.skipToPreviousEntry()
+        try await player.skipToPreviousEntry()
     }
 
     public func seek(to position: TimeInterval) async throws {
