@@ -15,5 +15,8 @@ public struct ListeningProfile: Sendable, Hashable {
         self.preferredDanceability = Self.clamp(preferredDanceability)
     }
 
-    private static func clamp(_ value: Double) -> Double { min(1, max(0, value)) }
+    private static func clamp(_ value: Double) -> Double {
+        guard value.isFinite else { return 0.5 }
+        return min(1, max(0, value))
+    }
 }
