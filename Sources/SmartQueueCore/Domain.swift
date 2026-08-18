@@ -71,7 +71,8 @@ public struct QueuePolicy: Sendable {
     public var refillThreshold: Int
     public var refillBatchSize: Int
 
-    // Smart Flow weights. These sum to 1.0 before repeat penalties.
+    // Weights are relative scoring weights. They are intentionally not required
+    // to sum to exactly 1 because callers may tune them independently.
     public var personalPreferenceWeight: Double
     public var appleRecommendationWeight: Double
     public var continuityWeight: Double
@@ -100,18 +101,23 @@ public struct QueuePolicy: Sendable {
         duplicatePenalty: Double = 0.10,
         artistRepeatPenalty: Double = 0.10
     ) {
-        self.targetSize = targetSize
-        self.refillThreshold = refillThreshold
-        self.refillBatchSize = refillBatchSize
-        self.personalPreferenceWeight = personalPreferenceWeight
-        self.appleRecommendationWeight = appleRecommendationWeight
-        self.continuityWeight = continuityWeight
-        self.explorationWeight = explorationWeight
-        self.freshnessWeight = freshnessWeight
-        self.diversityWeight = diversityWeight
-        self.transitionWeight = transitionWeight
-        self.duplicatePenalty = duplicatePenalty
-        self.artistRepeatPenalty = artistRepeatPenalty
+        self.targetSize = max(0, targetSize)
+        self.refillThreshold = max(0, refillThreshold)
+        self.refillBatchSize = max(0, refillBatchSize)
+        self.personalPreferenceWeight = Self.clampWeight(personalPreferenceWeight)
+        self.appleRecommendationWeight = Self.clampWeight(appleRecommendationWeight)
+        self.continuityWeight = Self.clampWeight(continuityWeight)
+        self.explorationWeight = Self.clampWeight(explorationWeight)
+        self.freshnessWeight = Self.clampWeight(freshnessWeight)
+        self.diversityWeight = Self.clampWeight(diversityWeight)
+        self.transitionWeight = Self.clampWeight(transitionWeight)
+        self.duplicatePenalty = Self.clampWeight(duplicatePenalty)
+        self.artistRepeatPenalty = Self.clampWeight(artistRepeatPenalty)
+    }
+
+    private static func clampWeight(_ value: Double) -> Double {
+        guard value.isFinite else { return 0 }
+        return min(1, max(0, value))
     }
 }
 
