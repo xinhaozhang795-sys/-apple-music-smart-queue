@@ -2,6 +2,7 @@ import Foundation
 import MusicKit
 import SmartQueueCore
 
+@available(iOS 18.0, *)
 @MainActor
 public final class SmartQueueCoordinator {
     public let candidateProvider: MusicCandidateProvider
@@ -21,8 +22,6 @@ public final class SmartQueueCoordinator {
         self.transitionPlanner = transitionPlanner
     }
 
-    /// Builds the next batch from live Apple Music recommendations and recent plays.
-    /// This method only plans; it does not mutate the live player queue.
     public func makeNextBatch(
         current: CurrentTrackContext,
         activeQueueTrackIDs: Set<String> = [],
@@ -35,7 +34,6 @@ public final class SmartQueueCoordinator {
         let recentCandidates = try await recent
         let derivedRecentArtists = Set(recentCandidates.map(\.artistName))
         let artists = recentArtistNames.union(derivedRecentArtists)
-
         let candidates = mergeUnique(recommendedCandidates + recentCandidates)
 
         return planner.plan(
@@ -46,7 +44,6 @@ public final class SmartQueueCoordinator {
         )
     }
 
-    /// Builds the queue and transition decisions as one deterministic plan.
     public func makeNextPlan(
         current: CurrentTrackContext,
         activeQueueTrackIDs: Set<String> = [],
@@ -66,11 +63,8 @@ public final class SmartQueueCoordinator {
     }
 
     /// Applies the first transition decision and appends the planned tracks.
-    ///
-    /// ApplicationMusicPlayer exposes one queue-wide transition policy. Therefore
-    /// the first edge (current -> next) is applied now. The full TransitionPlan
-    /// remains available so future per-edge platform APIs can execute later edges
-    /// without changing the core planner.
+    /// ApplicationMusicPlayer has one queue-wide transition policy, so the first
+    /// current-track -> next-track edge is the one executed at this queue handoff.
     public func appendBatch(
         _ candidates: [ScoredCandidate],
         current: CurrentTrackContext
@@ -92,9 +86,8 @@ public final class SmartQueueCoordinator {
         try await queueController.appendToQueue(trackIDs: candidates.map(\.candidate.id))
     }
 
-    /// Explicitly replaces the application Music queue with a planned batch.
-    /// The transition is applied before the queue is replaced, matching MusicKit's
-    /// documented ordering requirement.
+    /// Applies the transition before replacing the application queue, matching
+    /// MusicKit's documented ordering requirement.
     public func replaceQueue(
         with candidates: [ScoredCandidate],
         current: CurrentTrackContext,
