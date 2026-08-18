@@ -14,10 +14,15 @@ public struct TransitionScore: Sendable, Equatable {
         valence: Double,
         danceability: Double
     ) {
-        self.overall = overall
-        self.bpm = bpm
-        self.energy = energy
-        self.valence = valence
-        self.danceability = danceability
+        self.overall = Self.clamp(overall)
+        self.bpm = Self.clamp(bpm)
+        self.energy = Self.clamp(energy)
+        self.valence = Self.clamp(valence)
+        self.danceability = Self.clamp(danceability)
+    }
+
+    private static func clamp(_ value: Double) -> Double {
+        guard value.isFinite else { return 0.5 }
+        return min(1, max(0, value))
     }
 }
