@@ -53,6 +53,7 @@ jobs:
             --exclude 'AppleMusicSmartQueue.xcodeproj' \
             --exclude 'AppleMusicSmartQueue/' \
             --exclude '.git/' \
+            --exclude '.ci-package/' \
             ./ .ci-package/
           cd .ci-package
           PACKAGE_SCHEME="SmartQueueDomain"
