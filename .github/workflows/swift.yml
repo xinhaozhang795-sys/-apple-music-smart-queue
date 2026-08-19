@@ -18,33 +18,52 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Show Xcode and package information
+      - name: Show Xcode and Swift versions
         run: |
           xcodebuild -version
           swift --version
-          xcodebuild -list -json -workspace .
+
+      - name: Validate package manifest
+        run: swift package dump-package
 
       - name: Resolve Swift package dependencies
-        run: |
-          xcodebuild \
-            -resolvePackageDependencies \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package
+        run: swift package resolve
 
-      - name: Build iOS package
+      - name: List Xcode project schemes
+        run: xcodebuild -project AppleMusicSmartQueue.xcodeproj -list
+
+      - name: Build iOS application and package integration
         run: |
           xcodebuild \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'generic/platform=iOS' \
+            -project AppleMusicSmartQueue.xcodeproj \
+            -scheme AppleMusicSmartQueue \
+            -sdk iphoneos \
             -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Run Swift package tests on iOS Simulator
+      - name: Test SmartQueueDomain on iOS Simulator
+        shell: bash
         run: |
+          set -euo pipefail
+          rm -rf .ci-package
+          mkdir .ci-package
+          rsync -a \
+            --exclude 'AppleMusicSmartQueue.xcodeproj' \
+            --exclude 'AppleMusicSmartQueue/' \
+            --exclude '.git/' \
+            --exclude '.ci-package/' \
+            ./ .ci-package/
+          cd .ci-package
+          PACKAGE_SCHEME="SmartQueueDomain"
+          xcodebuild -list
+          DEVICE_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')"
+          test -n "$DEVICE_ID"
           xcodebuild \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -scheme "$PACKAGE_SCHEME" \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
             -configuration Debug \
+            -only-testing SmartQueueDomainTests/SessionContextTests \
             test

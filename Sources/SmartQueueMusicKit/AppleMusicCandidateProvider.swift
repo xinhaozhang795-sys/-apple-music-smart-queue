@@ -1,6 +1,6 @@
 import Foundation
 import MusicKit
-import SmartQueueCore
+import SmartQueueDomain
 
 public struct AppleMusicCandidateProvider: Sendable {
     private let provider: MusicCandidateProvider
