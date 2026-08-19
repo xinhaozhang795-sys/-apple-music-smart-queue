@@ -10,7 +10,7 @@ let package = Package(
     products: [
         .library(name: "SmartQueueCore", targets: ["SmartQueueCore"]),
         .library(name: "SmartQueueMusicKit", targets: ["SmartQueueMusicKit"]),
-        .library(name: "SmartQueueApp", targets: ["SmartQueueApp"])
+        .library(name: "SmartQueueAppSupport", targets: ["SmartQueueApp"])
     ],
     targets: [
         .target(
