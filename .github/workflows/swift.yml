@@ -42,3 +42,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
+
+      - name: Test iOS application and package integration
+        run: |
+          xcodebuild \
+            -project AppleMusicSmartQueue.xcodeproj \
+            -scheme AppleMusicSmartQueue \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            test
