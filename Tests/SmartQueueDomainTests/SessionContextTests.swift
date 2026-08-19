@@ -1,6 +1,5 @@
 import XCTest
 @testable import SmartQueueDomain
-import SmartQueueCore
 
 final class SessionContextTests: XCTestCase {
     func testSessionPreservesCurrentQueueContext() {
@@ -39,7 +38,7 @@ final class SessionContextTests: XCTestCase {
         XCTAssertEqual(exploration.rejectedDiscoveries, 3)
     }
 
-    func testSessionIsExplicitlyBoundedByAnIdentifierAndStartTime() {
+    func testSessionIdentityAndStartTimeAreStable() {
         let id = UUID()
         let start = Date(timeIntervalSince1970: 123)
         let session = SessionContext(id: id, startedAt: start)
