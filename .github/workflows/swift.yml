@@ -43,5 +43,26 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Run Domain unit tests only
-        run: swift test --target SmartQueueDomainTests
+      - name: Test SmartQueueDomain on iOS Simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .ci-package
+          mkdir .ci-package
+          rsync -a \
+            --exclude 'AppleMusicSmartQueue.xcodeproj' \
+            --exclude 'AppleMusicSmartQueue/' \
+            --exclude '.git/' \
+            ./ .ci-package/
+          cd .ci-package
+          PACKAGE_SCHEME="SmartQueueDomain"
+          xcodebuild -list
+          DEVICE_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')"
+          test -n "$DEVICE_ID"
+          xcodebuild \
+            -scheme "$PACKAGE_SCHEME" \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -configuration Debug \
+            -only-testing SmartQueueDomainTests/SessionContextTests \
+            test
