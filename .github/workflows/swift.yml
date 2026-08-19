@@ -43,5 +43,5 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Run Swift package unit tests
-        run: swift test --filter SmartQueueDomainTests.SessionContextTests
+      - name: Run Domain unit tests only
+        run: swift test --target SmartQueueDomainTests
