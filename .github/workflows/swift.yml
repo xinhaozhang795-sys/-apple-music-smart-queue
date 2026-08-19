@@ -37,6 +37,6 @@ jobs:
           xcodebuild \
             -project AppleMusicSmartQueue.xcodeproj \
             -scheme AppleMusicSmartQueue \
-            -destination 'generic/platform=iOS' \
+            -sdk iphoneos \
             -configuration Debug \
             build
