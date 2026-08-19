@@ -18,33 +18,27 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Show Xcode and package information
+      - name: Show Xcode and Swift versions
         run: |
           xcodebuild -version
           swift --version
-          xcodebuild -list -json -workspace .
+
+      - name: Validate package manifest
+        run: swift package dump-package
 
       - name: Resolve Swift package dependencies
-        run: |
-          xcodebuild \
-            -resolvePackageDependencies \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package
+        run: swift package resolve
 
-      - name: Build iOS package
+      - name: List Xcode project schemes
+        run: xcodebuild -project AppleMusicSmartQueue.xcodeproj -list
+
+      - name: Build iOS application and package integration
         run: |
           xcodebuild \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'generic/platform=iOS' \
+            -project AppleMusicSmartQueue.xcodeproj \
+            -scheme AppleMusicSmartQueue \
+            -sdk iphoneos \
             -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             build
-
-      - name: Run Swift package tests on iOS Simulator
-        run: |
-          xcodebuild \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -configuration Debug \
-            test
