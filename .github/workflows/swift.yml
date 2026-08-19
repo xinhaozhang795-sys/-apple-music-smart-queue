@@ -18,23 +18,20 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Show Xcode and package information
+      - name: Show Xcode and Swift versions
         run: |
           xcodebuild -version
           swift --version
-          xcodebuild -list -json -workspace .
 
       - name: Resolve Swift package dependencies
         run: |
           xcodebuild \
             -resolvePackageDependencies \
-            -workspace . \
             -scheme AppleMusicSmartQueue-Package
 
       - name: Build iOS package
         run: |
           xcodebuild \
-            -workspace . \
             -scheme AppleMusicSmartQueue-Package \
             -destination 'generic/platform=iOS' \
             -configuration Debug \
@@ -43,7 +40,6 @@ jobs:
       - name: Run Swift package tests on iOS Simulator
         run: |
           xcodebuild \
-            -workspace . \
             -scheme AppleMusicSmartQueue-Package \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             -configuration Debug \
