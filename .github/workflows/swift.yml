@@ -39,4 +39,6 @@ jobs:
             -scheme AppleMusicSmartQueue \
             -sdk iphoneos \
             -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             build
