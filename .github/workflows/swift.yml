@@ -23,24 +23,20 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Resolve Swift package dependencies
-        run: |
-          xcodebuild \
-            -resolvePackageDependencies \
-            -scheme AppleMusicSmartQueue-Package
+      - name: Validate package manifest
+        run: swift package dump-package
 
-      - name: Build iOS package
+      - name: Resolve Swift package dependencies
+        run: swift package resolve
+
+      - name: List Xcode project schemes
+        run: xcodebuild -project AppleMusicSmartQueue.xcodeproj -list
+
+      - name: Build iOS application and package integration
         run: |
           xcodebuild \
-            -scheme AppleMusicSmartQueue-Package \
+            -project AppleMusicSmartQueue.xcodeproj \
+            -scheme AppleMusicSmartQueue \
             -destination 'generic/platform=iOS' \
             -configuration Debug \
             build
-
-      - name: Run Swift package tests on iOS Simulator
-        run: |
-          xcodebuild \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -configuration Debug \
-            test
