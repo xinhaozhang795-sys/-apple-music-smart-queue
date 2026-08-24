@@ -43,27 +43,39 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Test SmartQueueDomain on iOS Simulator
+      - name: Test SmartQueueDomain logic in isolation
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .ci-package
-          mkdir .ci-package
-          rsync -a \
-            --exclude 'AppleMusicSmartQueue.xcodeproj' \
-            --exclude 'AppleMusicSmartQueue/' \
-            --exclude '.git/' \
-            --exclude '.ci-package/' \
-            ./ .ci-package/
-          cd .ci-package
-          PACKAGE_SCHEME="SmartQueueDomain"
-          xcodebuild -list
-          DEVICE_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')"
-          test -n "$DEVICE_ID"
-          xcodebuild \
-            -scheme "$PACKAGE_SCHEME" \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
-            -configuration Debug \
-            -only-testing SmartQueueDomainTests/SessionContextTests \
-            test
+          rm -rf .ci-domain-package
+          mkdir -p .ci-domain-package/Sources/SmartQueueCore
+          mkdir -p .ci-domain-package/Sources/SmartQueueDomain
+          mkdir -p .ci-domain-package/Tests/SmartQueueDomainTests
+
+          rsync -a Sources/SmartQueueCore/ .ci-domain-package/Sources/SmartQueueCore/
+          rsync -a Sources/SmartQueueDomain/ .ci-domain-package/Sources/SmartQueueDomain/
+          rsync -a Tests/SmartQueueDomainTests/ .ci-domain-package/Tests/SmartQueueDomainTests/
+
+          cat > .ci-domain-package/Package.swift <<'EOF'
+          // swift-tools-version: 6.0
+          import PackageDescription
+
+          let package = Package(
+              name: "SmartQueueDomainCI",
+              platforms: [
+                  .macOS(.v15),
+                  .iOS(.v18)
+              ],
+              products: [
+                  .library(name: "SmartQueueCore", targets: ["SmartQueueCore"]),
+                  .library(name: "SmartQueueDomain", targets: ["SmartQueueDomain"])
+              ],
+              targets: [
+                  .target(name: "SmartQueueCore"),
+                  .target(name: "SmartQueueDomain", dependencies: ["SmartQueueCore"]),
+                  .testTarget(name: "SmartQueueDomainTests", dependencies: ["SmartQueueDomain"])
+              ]
+          )
+          EOF
+
+          swift test --package-path .ci-domain-package --filter SessionContextTests
