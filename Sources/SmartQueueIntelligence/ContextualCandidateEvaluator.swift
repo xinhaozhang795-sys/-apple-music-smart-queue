@@ -3,7 +3,7 @@ import SmartQueueDomain
 
 public enum CandidateDecisionAction: String, Sendable, Hashable {
     case insert
-    case defer
+    case deferCandidate
     case discoverLater
 }
 
@@ -60,7 +60,7 @@ public struct ContextualCandidateEvaluator: Sendable {
         if session.contains(trackID: candidate.id) {
             return CandidateDecision(
                 candidateID: candidate.id,
-                action: .defer,
+                action: .deferCandidate,
                 confidence: 1,
                 contextualFit: 0,
                 reason: "Already present in the active queue."
@@ -72,8 +72,6 @@ public struct ContextualCandidateEvaluator: Sendable {
         let preferenceFit = min(1, max(0, candidate.affinity))
         let freshness = min(1, max(0, candidate.freshness))
 
-        // Current listening context dominates discovery. Exploration can help a
-        // discovery candidate, but it cannot override a poor contextual fit.
         let contextualFit = weightedAverage([
             (continuity, 0.35),
             (moodFit, 0.35),
@@ -94,7 +92,7 @@ public struct ContextualCandidateEvaluator: Sendable {
         if contextualFit >= deferThreshold {
             return CandidateDecision(
                 candidateID: candidate.id,
-                action: .defer,
+                action: .deferCandidate,
                 confidence: 1 - abs(contextualFit - 0.5),
                 contextualFit: contextualFit,
                 reason: "Potentially suitable, but not strong enough to disturb the current listening flow."
@@ -104,7 +102,7 @@ public struct ContextualCandidateEvaluator: Sendable {
         let discoveryCandidate = candidate.source == .discovery || candidate.explorationValue > 0.6
         return CandidateDecision(
             candidateID: candidate.id,
-            action: discoveryCandidate ? .discoverLater : .defer,
+            action: discoveryCandidate ? .discoverLater : .deferCandidate,
             confidence: 1 - contextualFit,
             contextualFit: contextualFit,
             reason: discoveryCandidate
