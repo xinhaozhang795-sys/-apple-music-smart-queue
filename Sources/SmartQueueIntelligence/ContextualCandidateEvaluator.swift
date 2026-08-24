@@ -126,13 +126,13 @@ public struct ContextualCandidateEvaluator: Sendable {
         }
 
         guard !values.isEmpty else { return 0.5 }
-        let raw = values.reduce(0, +) / Double(values.count)
+        let raw = values.reduce(0.0, +) / Double(values.count)
         return mood.confidence == 0 ? 0.5 + (raw - 0.5) * 0.5 : raw
     }
 
     private func weightedAverage(_ values: [(Double, Double)]) -> Double {
-        let totalWeight = values.reduce(0) { $0 + $1.1 }
+        let totalWeight = values.reduce(0.0) { $0 + $1.1 }
         guard totalWeight > 0 else { return 0.5 }
-        return values.reduce(0) { $0 + $1.0 * $1.1 } / totalWeight
+        return values.reduce(0.0) { $0 + $1.0 * $1.1 } / totalWeight
     }
 }
