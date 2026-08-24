@@ -90,7 +90,7 @@ final class ContextualCandidateEvaluatorTests: XCTestCase {
             session: session
         )
 
-        XCTAssertEqual(decision.action, .defer)
+        XCTAssertEqual(decision.action, .deferCandidate)
         XCTAssertEqual(decision.contextualFit, 0)
     }
 }
