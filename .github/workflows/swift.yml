@@ -79,3 +79,48 @@ jobs:
           EOF
 
           swift test --package-path .ci-domain-package --filter SessionContextTests
+
+      - name: Test SmartQueueIntelligence logic in isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .ci-intelligence-package
+          mkdir -p .ci-intelligence-package/Sources/SmartQueueCore
+          mkdir -p .ci-intelligence-package/Sources/SmartQueueDomain
+          mkdir -p .ci-intelligence-package/Sources/SmartQueueStorage
+          mkdir -p .ci-intelligence-package/Sources/SmartQueueIntelligence
+          mkdir -p .ci-intelligence-package/Tests/SmartQueueIntelligenceTests
+
+          rsync -a Sources/SmartQueueCore/ .ci-intelligence-package/Sources/SmartQueueCore/
+          rsync -a Sources/SmartQueueDomain/ .ci-intelligence-package/Sources/SmartQueueDomain/
+          rsync -a Sources/SmartQueueStorage/ .ci-intelligence-package/Sources/SmartQueueStorage/
+          rsync -a Sources/SmartQueueIntelligence/ .ci-intelligence-package/Sources/SmartQueueIntelligence/
+          rsync -a Tests/SmartQueueIntelligenceTests/ .ci-intelligence-package/Tests/SmartQueueIntelligenceTests/
+
+          cat > .ci-intelligence-package/Package.swift <<'EOF'
+          // swift-tools-version: 6.0
+          import PackageDescription
+
+          let package = Package(
+              name: "SmartQueueIntelligenceCI",
+              platforms: [
+                  .macOS(.v15),
+                  .iOS(.v18)
+              ],
+              products: [
+                  .library(name: "SmartQueueCore", targets: ["SmartQueueCore"]),
+                  .library(name: "SmartQueueDomain", targets: ["SmartQueueDomain"]),
+                  .library(name: "SmartQueueStorage", targets: ["SmartQueueStorage"]),
+                  .library(name: "SmartQueueIntelligence", targets: ["SmartQueueIntelligence"])
+              ],
+              targets: [
+                  .target(name: "SmartQueueCore"),
+                  .target(name: "SmartQueueDomain", dependencies: ["SmartQueueCore"]),
+                  .target(name: "SmartQueueStorage", dependencies: ["SmartQueueCore", "SmartQueueDomain"]),
+                  .target(name: "SmartQueueIntelligence", dependencies: ["SmartQueueCore", "SmartQueueDomain", "SmartQueueStorage"]),
+                  .testTarget(name: "SmartQueueIntelligenceTests", dependencies: ["SmartQueueIntelligence", "SmartQueueCore", "SmartQueueDomain"])
+              ]
+          )
+          EOF
+
+          swift test --package-path .ci-intelligence-package --filter ContextualCandidateEvaluatorTests
