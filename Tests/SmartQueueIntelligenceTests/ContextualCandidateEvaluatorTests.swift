@@ -93,4 +93,29 @@ final class ContextualCandidateEvaluatorTests: XCTestCase {
         XCTAssertEqual(decision.action, .deferCandidate)
         XCTAssertEqual(decision.contextualFit, 0)
     }
+
+    func testNeutralSignalsProduceStableMidpointDecision() {
+        let session = SessionContext(
+            startedAt: Date(timeIntervalSince1970: 1),
+            mood: SessionMood(valence: 0.5, energy: 0.5, danceability: 0.5, confidence: 1)
+        )
+        let candidate = TrackCandidate(
+            id: "neutral",
+            title: "Neutral",
+            artistName: "Artist",
+            source: .library,
+            affinity: 0.5,
+            freshness: 0.5
+        )
+
+        let decision = ContextualCandidateEvaluator().evaluate(
+            candidate: candidate,
+            candidateFeatures: nil,
+            currentFeatures: nil,
+            session: session
+        )
+
+        XCTAssertEqual(decision.action, .deferCandidate)
+        XCTAssertEqual(decision.contextualFit, 0.5, accuracy: 0.0001)
+    }
 }
