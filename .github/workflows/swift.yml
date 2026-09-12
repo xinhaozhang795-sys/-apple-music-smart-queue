@@ -18,33 +18,58 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Show Xcode and package information
+      - name: Show Xcode and Swift versions
         run: |
           xcodebuild -version
           swift --version
-          xcodebuild -list -json -workspace .
 
-      - name: Resolve Swift package dependencies
+      - name: Validate package manifest
+        run: swift package dump-package
+
+      - name: Build iOS application and package integration
         run: |
           xcodebuild \
-            -resolvePackageDependencies \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package
-
-      - name: Build iOS package
-        run: |
-          xcodebuild \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'generic/platform=iOS' \
+            -project AppleMusicSmartQueue.xcodeproj \
+            -scheme AppleMusicSmartQueue \
+            -sdk iphoneos \
             -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Run Swift package tests on iOS Simulator
+      - name: Test platform-neutral core and session logic
+        shell: bash
         run: |
-          xcodebuild \
-            -workspace . \
-            -scheme AppleMusicSmartQueue-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -configuration Debug \
-            test
+          set -euo pipefail
+          rm -rf .ci-swift-package
+          mkdir -p .ci-swift-package/Sources/SmartQueueCore
+          mkdir -p .ci-swift-package/Sources/SmartQueueDomain
+          mkdir -p .ci-swift-package/Tests/SmartQueueDomainTests
+
+          rsync -a Sources/SmartQueueCore/ .ci-swift-package/Sources/SmartQueueCore/
+          rsync -a Sources/SmartQueueDomain/ .ci-swift-package/Sources/SmartQueueDomain/
+          rsync -a Tests/SmartQueueDomainTests/ .ci-swift-package/Tests/SmartQueueDomainTests/
+
+          cat > .ci-swift-package/Package.swift <<'EOF'
+          // swift-tools-version: 6.0
+          import PackageDescription
+
+          let package = Package(
+              name: "SmartQueueCILogic",
+              platforms: [
+                  .macOS(.v15),
+                  .iOS(.v18)
+              ],
+              products: [
+                  .library(name: "SmartQueueCore", targets: ["SmartQueueCore"]),
+                  .library(name: "SmartQueueDomain", targets: ["SmartQueueDomain"])
+              ],
+              targets: [
+                  .target(name: "SmartQueueCore"),
+                  .target(name: "SmartQueueDomain", dependencies: ["SmartQueueCore"]),
+                  .testTarget(name: "SmartQueueDomainTests", dependencies: ["SmartQueueDomain"])
+              ]
+          )
+          EOF
+
+          swift test --package-path .ci-swift-package

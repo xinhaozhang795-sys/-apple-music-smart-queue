@@ -1,6 +1,6 @@
 import Foundation
 import MusicKit
-import SmartQueueCore
+import SmartQueueDomain
 
 public struct MusicCandidateProvider: MusicCandidateSource, Sendable {
     public init() {}

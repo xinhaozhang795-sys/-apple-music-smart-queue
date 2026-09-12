@@ -1,6 +1,6 @@
 import Foundation
 @preconcurrency import MusicKit
-import SmartQueueCore
+import SmartQueueDomain
 
 public enum MusicQueueControllerError: Error {
     case noPlayableTracks
