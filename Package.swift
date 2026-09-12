@@ -8,20 +8,17 @@ let package = Package(
     products: [
         .library(name: "SmartQueueCore", targets: ["SmartQueueCore"]),
         .library(name: "SmartQueueDomain", targets: ["SmartQueueDomain"]),
-        .library(name: "SmartQueueMusicKit", targets: ["SmartQueueMusicKit"]),
-        .library(name: "SmartQueueIntelligence", targets: ["SmartQueueIntelligence"])
+        .library(name: "SmartQueueMusicKit", targets: ["SmartQueueMusicKit"])
     ],
     targets: [
         .target(name: "SmartQueueCore"),
         .target(name: "SmartQueueDomain", dependencies: ["SmartQueueCore"]),
-        .target(name: "SmartQueueIntelligence", dependencies: ["SmartQueueCore", "SmartQueueDomain"]),
         .target(
             name: "SmartQueueMusicKit",
-            dependencies: ["SmartQueueCore", "SmartQueueDomain", "SmartQueueIntelligence"],
+            dependencies: ["SmartQueueCore", "SmartQueueDomain"],
             linkerSettings: [.linkedFramework("MusicKit")]
         ),
         .testTarget(name: "SmartQueueCoreTests", dependencies: ["SmartQueueCore"]),
-        .testTarget(name: "SmartQueueDomainTests", dependencies: ["SmartQueueDomain"]),
-        .testTarget(name: "SmartQueueIntelligenceTests", dependencies: ["SmartQueueIntelligence"])
+        .testTarget(name: "SmartQueueDomainTests", dependencies: ["SmartQueueDomain"])
     ]
 )
