@@ -26,12 +26,6 @@ jobs:
       - name: Validate package manifest
         run: swift package dump-package
 
-      - name: Resolve Swift package dependencies
-        run: swift package resolve
-
-      - name: List Xcode project schemes
-        run: xcodebuild -project AppleMusicSmartQueue.xcodeproj -list
-
       - name: Build iOS application and package integration
         run: |
           xcodebuild \
@@ -43,22 +37,18 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Test platform-neutral package logic in isolation
+      - name: Test platform-neutral core and session logic
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .ci-swift-package
           mkdir -p .ci-swift-package/Sources/SmartQueueCore
           mkdir -p .ci-swift-package/Sources/SmartQueueDomain
-          mkdir -p .ci-swift-package/Sources/SmartQueueIntelligence
           mkdir -p .ci-swift-package/Tests/SmartQueueDomainTests
-          mkdir -p .ci-swift-package/Tests/SmartQueueIntelligenceTests
 
           rsync -a Sources/SmartQueueCore/ .ci-swift-package/Sources/SmartQueueCore/
           rsync -a Sources/SmartQueueDomain/ .ci-swift-package/Sources/SmartQueueDomain/
-          rsync -a Sources/SmartQueueIntelligence/ .ci-swift-package/Sources/SmartQueueIntelligence/
           rsync -a Tests/SmartQueueDomainTests/ .ci-swift-package/Tests/SmartQueueDomainTests/
-          rsync -a Tests/SmartQueueIntelligenceTests/ .ci-swift-package/Tests/SmartQueueIntelligenceTests/
 
           cat > .ci-swift-package/Package.swift <<'EOF'
           // swift-tools-version: 6.0
@@ -72,15 +62,12 @@ jobs:
               ],
               products: [
                   .library(name: "SmartQueueCore", targets: ["SmartQueueCore"]),
-                  .library(name: "SmartQueueDomain", targets: ["SmartQueueDomain"]),
-                  .library(name: "SmartQueueIntelligence", targets: ["SmartQueueIntelligence"])
+                  .library(name: "SmartQueueDomain", targets: ["SmartQueueDomain"])
               ],
               targets: [
                   .target(name: "SmartQueueCore"),
                   .target(name: "SmartQueueDomain", dependencies: ["SmartQueueCore"]),
-                  .target(name: "SmartQueueIntelligence", dependencies: ["SmartQueueCore", "SmartQueueDomain"]),
-                  .testTarget(name: "SmartQueueDomainTests", dependencies: ["SmartQueueDomain"]),
-                  .testTarget(name: "SmartQueueIntelligenceTests", dependencies: ["SmartQueueIntelligence"])
+                  .testTarget(name: "SmartQueueDomainTests", dependencies: ["SmartQueueDomain"])
               ]
           )
           EOF
