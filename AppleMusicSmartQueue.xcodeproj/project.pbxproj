@@ -74,7 +74,7 @@
 			);
 			name = AppleMusicSmartQueue;
 			packageProductDependencies = (
-				A00000810000000100000002 /* SmartQueueAppSupport */,
+				A00000810000000100000001 /* SmartQueueMusicKit */,
 			);
 			productName = AppleMusicSmartQueue;
 			productReference = A00000110000000100000005 /* AppleMusicSmartQueue.app */;
@@ -237,11 +237,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A00000910000000100000001 /* XCLocalSwiftPackageReference "Package" */;
 			productName = SmartQueueMusicKit;
-		};
-		A00000810000000100000002 /* SmartQueueAppSupport */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A00000910000000100000001 /* XCLocalSwiftPackageReference "Package" */;
-			productName = SmartQueueAppSupport;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
